@@ -10,6 +10,7 @@ Features include:
 * Textures
 * Cameras
 * Materials
+* Cached meshes and scenes for faster rendering
 
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
