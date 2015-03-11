@@ -16,3 +16,6 @@
 *.suo
 *.user
 *.sln.docstates
+
+AutoDesk-Viewer/*
+*/fbxsdk_2015.1/*
