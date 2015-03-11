@@ -11,6 +11,9 @@ Features include:
 * Cameras
 * Materials
 * Cached meshes and scenes for faster rendering
+* Poses
+* Individual mesh manipulation
+* Enable and disable rendering of certain assets in the scene
 
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
