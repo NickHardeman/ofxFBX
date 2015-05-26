@@ -163,9 +163,9 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
         // normals
         if(bHasNormals) {
             ofMesh normalsMesh;
-            cout << "ofxFBXMesh :: we have normals for " << getName() << endl;
+            //cout << "ofxFBXMesh :: we have normals for " << getName() << endl;
             if(bMapNormalsByControlPoint) {
-                cout << "ofxFBXMesh :: normals by control point for " << getName() << endl;
+                //cout << "ofxFBXMesh :: normals by control point for " << getName() << endl;
                 const FbxGeometryElementNormal * lNormalElement = lMesh->GetElementNormal(0);
                 for(int i = 0; i < lMesh->GetControlPointsCount(); i++ ) {
                     int lNormalIndex = i;
@@ -181,9 +181,9 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
         
         // textures //
         if(bHasUvs) {
-            cout << "ofxFBXMesh :: we have tex coords for " << getName() << endl;
+            //cout << "ofxFBXMesh :: we have tex coords for " << getName() << endl;
             if(bMapUvsByControlPoint) {
-                cout << "ofxFBXMesh :: tex coords by control point " << getName() << endl;
+                //cout << "ofxFBXMesh :: tex coords by control point " << getName() << endl;
                 const FbxGeometryElementUV * lUVElement = lMesh->GetElementUV(0);
                 for(int i = 0; i < lMesh->GetControlPointsCount(); i++ ) {
                     int lUVIndex = i;
@@ -423,6 +423,7 @@ void ofxFBXMesh::draw( ofMesh* aMesh ) {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veebs.getIndexId() );
 //            cout << "lElementCount = " << lElementCount << " mesh is using indices = " << mesh.hasIndices() << endl;
             glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
+			
             if (lMaterialCache ) {
                 lMaterialCache->end();
                 if(bWasUsingTextures) lMaterialCache->enableTextures();
