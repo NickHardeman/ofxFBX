@@ -8,13 +8,15 @@
 
 #pragma once
 
+
 #include "ofMain.h"
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
+
+#if defined(TARGET_LINUX) 
     #include <fbxsdk.h>
+#else
+	#include "fbxsdk.h"
 #endif
-#if defined(TARGET_OSX)
-    #include "fbxsdk.h"
-#endif
+
 #include "ofxFBXNode.h"
 #include "ofxFBXBone.h"
 #include <map>

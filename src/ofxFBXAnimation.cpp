@@ -126,7 +126,8 @@ unsigned int ofxFBXAnimation::getPositionMillis() {
 
 //--------------------------------------------------------------
 int ofxFBXAnimation::getFrameNum() {
-    return round(getPosition() * (float)getTotalNumFrames());
+    //return round(getPosition() * (float)getTotalNumFrames()); // round is not defined in math.h using VS2012
+    return floor( (getPosition() * (float)getTotalNumFrames()) + 0.5f );
 }
 
 //--------------------------------------------------------------

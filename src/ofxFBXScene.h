@@ -18,10 +18,23 @@
 #endif
 
 #include "ofMain.h"
+
+/*
 #if defined(TARGET_OSX)
     #include "fbxsdk.h"
-#include "fbxscene.h"
 #endif
+
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+	#include <fbxscene.h>
+#else
+	#include "fbxsdk.h"
+	#include "fbxsdk/scene/fbxscene.h"
+#endif
+	*/
+
+#include <fbxsdk.h>
+//#include <fbxsdk/scene/fbxscene.h>
 
 #include "ofxFBXUtils.h"
 #include "ofxFBXAnimation.h"

@@ -154,8 +154,8 @@ void ofxFBXSkeleton::lateUpdateWithAnimation() {
         ofxFBXBone* bone    = &it->second;
         ofxFBXBone* sbone   = getSourceBone( it->first );
         if( sbone != NULL ) {
-//            sbone->setTransformMatrix( bone->getLocalTransformMatrix() );
-            sbone->localTransformMatrix = bone->localTransformMatrix;
+            sbone->setTransformMatrix( bone->getLocalTransformMatrix() );
+//            sbone->localTransformMatrix = bone->localTransformMatrix;
             sbone->setPosition( bone->getPosition() );
             sbone->setOrientation( bone->getOrientationQuat() );
             sbone->setScale( bone->getScale() );
@@ -193,8 +193,8 @@ void ofxFBXSkeleton::updateFromCachedSkeleton( shared_ptr< ofxFBXSkeleton> aSkel
 //            onScaleChanged();
             
 //            sbone->update( pTime, NULL );
-//            bone->setTransformMatrix( obone->getLocalTransformMatrix() );
-            bone->localTransformMatrix = obone->localTransformMatrix;
+            bone->setTransformMatrix( obone->getLocalTransformMatrix() );
+//            bone->localTransformMatrix = obone->localTransformMatrix;
             bone->setPosition( obone->getPosition() );
             bone->setOrientation( obone->getOrientationQuat() );
             bone->setScale( obone->getScale() );

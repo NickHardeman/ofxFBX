@@ -50,7 +50,7 @@ public:
     void disablePoses();
     void togglePosesEnabled();
     int getNumPoses();
-    int setPoseIndex( int aIndex );
+    void setPoseIndex( int aIndex );
     shared_ptr< ofxFBXPose > getCurrentPose();
     vector< shared_ptr< ofxFBXPose > > getPoses();
     

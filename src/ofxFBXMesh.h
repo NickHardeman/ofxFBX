@@ -14,9 +14,13 @@
 #endif
 
 #include "ofMain.h"
-#if defined(TARGET_OSX)
-    #include "fbxsdk.h"
+
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+#else
+	#include "fbxsdk.h"
 #endif
+
 
 #include "ofVboMesh.h"
 #include "ofxFBXNode.h"
