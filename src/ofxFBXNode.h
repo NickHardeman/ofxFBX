@@ -8,11 +8,15 @@
 
 #pragma once
 
+#include <fbxsdk.h>
+
+/*
 #if defined(TARGET_LINUX) 
     #include <fbxsdk.h>
 #else
 	#include "fbxsdk.h"
 #endif
+*/
 
 #include "ofxFBXUtils.h"
 

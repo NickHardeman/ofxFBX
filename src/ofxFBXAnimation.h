@@ -11,12 +11,15 @@
 #include "ofMain.h"
 #include <math.h> 
 
+#include <fbxsdk.h>
+
+/*
 #if defined(TARGET_LINUX) 
     #include <fbxsdk.h>
 #else
 	#include "fbxsdk.h"
 #endif
-
+*/
 
 class ofxFBXAnimation {
 public:
