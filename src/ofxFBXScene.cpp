@@ -256,7 +256,7 @@ void ofxFBXScene::deleteCachedTexturesInScene( FbxScene* pScene ) {
 bool ofxFBXScene::isValidTexturePath( string aPathToTexture ) {
     ofFile tfile = (string)aPathToTexture;
     if(!tfile.exists()) return false;
-    return (tfile.getExtension() == "jpg" || tfile.getExtension() == "png" || tfile.getExtension() == "bmp");
+    return ( tfile.getExtension() == "tga" || tfile.getExtension() == "jpg" || tfile.getExtension() == "png" || tfile.getExtension() == "bmp");
 }
 
 #pragma mark - Materials
