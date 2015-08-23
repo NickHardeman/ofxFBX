@@ -36,6 +36,7 @@ public:
         
     }
     
+    bool bRender;
     int triangleCount;
     int indexOffset;
     int totalIndices;
@@ -84,6 +85,8 @@ private:
                                    FbxAMatrix& pVertexTransformMatrix,
                                    FbxTime pTime,
                                    FbxPose* pPose);
+    
+    void computeNormals( ofMesh* aMesh, FbxVector4* pVertexArray );
     
     vector<ofxFBXSubMesh> subMeshes;
     ofVbo veebs;

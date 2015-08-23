@@ -31,7 +31,6 @@
 #include "ofxFBXCluster.h"
 #include "ofxFBXSkeleton.h"
 #include "ofxFBXPose.h"
-#include "ofxFBXCachedSkeletonAnimation.h"
 
 class ofxFBXSceneSettings {
 public:
@@ -42,7 +41,6 @@ public:
         importShapes                    = true;
         importGobos                     = true;
         importAnimations                = true;
-        cacheSkeletonAnimations         = false; // currently can cause problems //
     }
     
     bool importBones;
@@ -51,7 +49,6 @@ public:
     bool importShapes;
     bool importGobos;
     bool importAnimations;
-    bool cacheSkeletonAnimations;
 };
 
 
@@ -72,7 +69,6 @@ public:
     int getNumAnimations();
     bool areAnimationsEnabled();
     void populateAnimations( vector<ofxFBXAnimation>& aInVector );
-    void populateCachedSkeletonAnimations( vector< vector<ofxFBXCachedSkeletonAnimation> >& aInVector );
     
     void populateSkeletons( vector< shared_ptr<ofxFBXSkeleton> >& aInSkeletons );
     
@@ -94,9 +90,9 @@ private:
     void populateCachedSkeletonAnimationInformation();
     void populateMeshesRecursive( FbxNode* pNode, FbxAnimLayer* pAnimLayer );
     void populateBonesRecursive( FbxNode* pNode, FbxAnimLayer* pAnimLayer );
-    void parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeletonBases );
+    void parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeletonBases, int aBoneLevel );
     void constructSkeletons( FbxNode* pNode, FbxAnimLayer* pAnimLayer );
-    void constructSkeletonsRecursive( ofxFBXSkeleton* aSkeleton, FbxNode* pNode );
+    void constructSkeletonsRecursive( ofxFBXSkeleton* aSkeleton, FbxNode* pNode, int aBoneLevel );
     
     FbxTime fbxFrameTime;
     string fbxFilePath;
@@ -112,8 +108,6 @@ private:
     
     vector<ofxFBXAnimation> animations;
     FbxAnimLayer* currentFbxAnimationLayer;
-    
-    vector< vector<ofxFBXCachedSkeletonAnimation> > cachedSkeletonAnimations;
     
     ofxFBXSceneSettings _settings;
 };

@@ -41,7 +41,7 @@ void ofxFBXManager::setup( ofxFBXScene* aScene ) {
     
     aScene->populateSkeletons( skeletons );
     aScene->populatePoses( poses );
-    aScene->populateCachedSkeletonAnimations( cachedSkeletonAnimations );
+    
 }
 
 //--------------------------------------------------------------
@@ -74,15 +74,15 @@ void ofxFBXManager::update() {
     
     if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
         
-        if( cachedSkeletonAnimations.size() ) {
+//        if( cachedSkeletonAnimations.size() ) {
+//            for(int i = 0; i < skeletons.size(); i++ ) {
+//                cachedSkeletonAnimations[animationIndex][i].update( animations[animationIndex].getFrameNum(), skeletons[i] );
+//            }
+//        } else {
             for(int i = 0; i < skeletons.size(); i++ ) {
-                cachedSkeletonAnimations[animationIndex][i].update( animations[animationIndex].getFrameNum(), skeletons[i] );
+                skeletons[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
             }
-        } else {
-            for(int i = 0; i < skeletons.size(); i++ ) {
-                skeletons[i]->updateWithAnimation( animations[animationIndex].fbxCurrentTime, lPose );
-            }
-        }
+//        }
     }
 }
 
@@ -108,7 +108,7 @@ void ofxFBXManager::lateUpdate() {
 //        if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
             vector< shared_ptr<ofxFBXMesh> > fbxMeshes = fbxScene->getMeshes();
             for( int i = 0; i < skeletons.size(); i++ ) {
-                skeletons[i]->lateUpdateWithAnimation();
+                skeletons[i]->lateUpdate();
             }
             
             for(int i = 0; i < fbxMeshes.size(); i++ ) {
@@ -135,6 +135,16 @@ void ofxFBXManager::drawMeshes() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXManager::drawMeshWireframes() {
+    vector< shared_ptr<ofxFBXMesh> > fbxMeshes = fbxScene->getMeshes();
+    for(int i = 0; i < fbxMeshes.size(); i++ ) {
+        meshTransforms[i].transformGL();
+        meshes[i].drawWireframe();
+        meshTransforms[i].restoreTransformGL();
+    }
+}
+
+//--------------------------------------------------------------
 void ofxFBXManager::drawMeshNormals( float aLen, bool aBFaceNormals ) {
     vector< shared_ptr<ofxFBXMesh> > fbxMeshes = fbxScene->getMeshes();
     for(int i = 0; i < fbxMeshes.size(); i++ ) {
@@ -145,10 +155,10 @@ void ofxFBXManager::drawMeshNormals( float aLen, bool aBFaceNormals ) {
 }
 
 //--------------------------------------------------------------
-void ofxFBXManager::drawSkeletons( float aLen ) {
+void ofxFBXManager::drawSkeletons( float aLen, bool aBDrawAxes ) {
     transformGL();
     for(int i = 0; i < skeletons.size(); i++ ) {
-        skeletons[i]->draw( aLen );
+        skeletons[i]->draw( aLen, aBDrawAxes );
     }
     restoreTransformGL();
 }
@@ -156,6 +166,16 @@ void ofxFBXManager::drawSkeletons( float aLen ) {
 //--------------------------------------------------------------
 vector< ofMesh >& ofxFBXManager::getMeshes() {
     return meshes;
+}
+
+//--------------------------------------------------------------
+int ofxFBXManager::getNumMeshes() {
+    return (int)meshes.size();
+}
+
+//--------------------------------------------------------------
+string ofxFBXManager::getMeshName( int aMeshIndex ) {
+    return fbxScene->getMeshes()[aMeshIndex]->getName();
 }
 
 //--------------------------------------------------------------
@@ -184,11 +204,29 @@ ofxFBXAnimation& ofxFBXManager::getCurrentAnimation() {
 }
 
 //--------------------------------------------------------------
+int ofxFBXManager::getAnimationIndex( string aname ) {
+    int findex = -1;
+    for( int i = 0; i < animations.size(); i++ ) {
+        if( animations[i].name == aname ) {
+            findex = i;
+            break;
+        }
+    }
+    return findex;
+}
+
+//--------------------------------------------------------------
 ofxFBXAnimation& ofxFBXManager::getAnimation( int aIndex ) {
     if( aIndex > animations.size() -1 ) {
         ofLogWarning( "ofxFBXManager :: getAnimation : index is too high " ) << aIndex;
         aIndex = ofClamp(aIndex, 0, animations.size()-1);
     }
+    
+    if( aIndex < 0 ) {
+        ofLogWarning( "ofxFBXManager :: getAnimation : index is too low " ) << aIndex;
+        return dummyAnimation;
+    }
+    
     if( animations.size() == 0 ) {
         aIndex = 0;
         animations.push_back( dummyAnimation );
@@ -198,7 +236,18 @@ ofxFBXAnimation& ofxFBXManager::getAnimation( int aIndex ) {
 }
 
 //--------------------------------------------------------------
+ofxFBXAnimation& ofxFBXManager::getAnimation( string aname ) {
+    getAnimation( getAnimationIndex( aname ) );
+}
+
+//--------------------------------------------------------------
 void ofxFBXManager::setAnimation( int aIndex ) {
+    
+    if( aIndex < 0) {
+        ofLogWarning("ofxFBXManager :: setAnimation : returning because the index is less than 0!");
+        return;
+    }
+    
     if(animations.size() < 1) {
         ofLogWarning("ofxFBXManager :: setAnimation : returning because there are no animations!");
         return;
@@ -213,9 +262,16 @@ void ofxFBXManager::setAnimation( int aIndex ) {
         ofLogWarning("ofxFBXManager :: setAnimation : the anim stack was not found in the scene!");
         return;
     }
+    int numAnimLayers = lCurrentAnimationStack->GetMemberCount<FbxAnimLayer>();
+    cout << "Number of animation layers= " << numAnimLayers << endl;
     currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
     fbxScene->getFBXScene()->GetEvaluator()->SetContext( lCurrentAnimationStack );
     animationIndex = aIndex;
+}
+
+//--------------------------------------------------------------
+void ofxFBXManager::setAnimation( string aname ) {
+    setAnimation( getAnimationIndex( aname ) );
 }
 
 //--------------------------------------------------------------
@@ -305,6 +361,15 @@ ofxFBXBone* ofxFBXManager::getBone( string aBoneName, int aSkeletonIndex ) {
     if( aSkeletonIndex < 0 ) return NULL;
     if( aSkeletonIndex >= skeletons.size() ) return NULL;
     return skeletons[ aSkeletonIndex ]->getBone( aBoneName );
+}
+
+//--------------------------------------------------------------
+ofMatrix4x4 ofxFBXManager::getBoneGlobalTransform( string aBoneName, int aSkeletonIndex ) {
+    ofxFBXBone* tbone = getBone( aBoneName, aSkeletonIndex );
+    if( tbone != NULL ) {
+        return tbone->getGlobalTransformMatrix() * getGlobalTransformMatrix();
+    }
+    return ofMatrix4x4();
 }
 
 //--------------------------------------------------------------

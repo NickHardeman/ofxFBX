@@ -19,17 +19,24 @@ public:
     
     void draw();
     void drawMeshes();
+    void drawMeshWireframes();
     void drawMeshNormals( float aLen = 4.f, bool aBFaceNormals = true );
-    void drawSkeletons( float aLen = 10.f );
+    void drawSkeletons( float aLen = 10.f, bool aBDrawAxes = true );
     
     vector< ofMesh >& getMeshes();
+    int getNumMeshes();
+    string getMeshName( int aMeshIndex );
+    
     ofxFBXScene* getFbxScene();
     
     int getNumAnimations();
     int getCurrentAnimationIndex();
+    int getAnimationIndex( string aname );
     ofxFBXAnimation& getCurrentAnimation();
     ofxFBXAnimation& getAnimation( int aIndex );
+    ofxFBXAnimation& getAnimation( string aname );
     void setAnimation( int aIndex );
+    void setAnimation( string aname );
     void enableAnimations();
     void disableAnimations();
     void toggleAnimationsEnabled();
@@ -42,6 +49,7 @@ public:
     int getNumSkeletons();
     int getNumBones();
     ofxFBXBone* getBone( string aBoneName, int aSkeletonIndex=0 );
+    ofMatrix4x4 getBoneGlobalTransform( string aBoneName, int aSkeletonIndex=0 );
     string getSkeletonInfo();
     
     bool hasPoses();
@@ -63,7 +71,6 @@ protected:
     vector< shared_ptr<ofxFBXPose> > poses;
     
     vector<ofxFBXAnimation> animations;
-    vector< vector<ofxFBXCachedSkeletonAnimation> > cachedSkeletonAnimations;
     
     FbxAnimLayer* currentFbxAnimationLayer;
     ofxFBXScene* fbxScene;
