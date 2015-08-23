@@ -29,19 +29,12 @@ public:
     void update( FbxTime& pTime, FbxPose* pPose );
     void lateUpdate();
     
-    void updateWithAnimation( FbxTime& pTime, FbxPose* pPose );
-    void lateUpdateWithAnimation();
+    void draw( float aLen = 6.f, bool aBDrawAxes = true );
     
-    void updateFromCachedSkeleton( shared_ptr< ofxFBXSkeleton> aSkeleton );
-    
-    void draw( float aLen = 6.f );
-    
-    void addBone( string aName, ofxFBXBone* aBone );
     ofxFBXBone* getBone( string aName );
-    ofxFBXBone* getSourceBone( string aName );
     
-    void enableExternalControl( string aName );
-    void enableExternalControlRecursive( ofxFBXBone* aBone );
+    void enableAnimationForBone( string aName, bool bRecursive );
+    void disableAnimationForBone( string aName, bool bRecursive );
     
     void enableAnimation();
     void disableAnimation();
@@ -50,13 +43,11 @@ public:
     void reset();
     string toString();
     
-private:
-    void updateBoneProperties();
+    ofxFBXBone root;
+    ofxFBXBone* rootSource;
     
-    void printOutBoneRecursive( stringstream& aSS, string aBoneName, map< string, bool >& aPrintMap, string aSpacer );
-    map< string, ofxFBXBone* > sourceBones;
-    map< string, ofxFBXBone > bones;
-    int numBones;
+private:
+    
 };
 
 

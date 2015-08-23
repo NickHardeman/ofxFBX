@@ -27,9 +27,11 @@ public:
     bool doesExist();
     
     void setup( FbxNode* pNode );
+    void setupFromSourceBones();
     void cacheStartTransforms();
     void update( FbxTime& pTime, FbxPose* pPose );
-    void draw( float aLen = 6.f);
+    void lateUpdate();
+    void draw( float aLen = 6.f, bool aBDrawAxes = true);
     
     void reset();
     void onPositionChanged();
@@ -39,12 +41,8 @@ public:
     bool isLimb();
     bool hasSkeletonParent();
     
-    void enableExternalControl();
-    void disableExternalControl();
-    bool isExternalControlEnabled();
-    
-    void enableAnimation();
-    void disableAnimation();
+    void enableAnimation( bool bRecursively=false );
+    void disableAnimation( bool bRecursively=false );
     bool isAnimationEnabled();
     
     void updateFbxTransform();
@@ -52,18 +50,34 @@ public:
     ofQuaternion getOriginalLocalRotation();
     ofVec3f getOriginalLocalPosition();
     
+    int getNumBones();
+    map< string, ofxFBXBone* > getAllBones();
+    
+    string getAsString( int aLevel=0);
+    ofxFBXBone* getBone( string aName );
+    
     FbxSkeleton* getFbxSkeleton();
     FbxNode* fbxNode;
     FbxAMatrix fbxTransform;
     
     string parentBoneName;
     
-protected:
+    int level;
     
-    bool bExists;
+    map< string, ofxFBXBone > bones;
+    map< string, ofxFBXBone* > sourceBones;
+    
+    ofxFBXBone* sourceBone;
     ofQuaternion origLocalRotation;
+    ofQuaternion origGlobalRotation;
     ofVec3f origLocalPosition;
-    bool bExternalControlEnabled;
+    
+protected:
+    void findBoneRecursive( string aName, ofxFBXBone*& returnBone );
+    void populateBonesRecursive( map< string, ofxFBXBone* >& aBoneMap );
+    bool bExists;
+    
+//    bool bExternalControlEnabled;
     bool bUpdateFromAnimation;
 };
 
