@@ -35,6 +35,7 @@ public:
     void togglePlayPause();
     bool isPlaying();
     bool isPaused();
+    bool isDone();
     
     float getPosition();
     float getPositionSeconds();
@@ -65,6 +66,7 @@ protected:
     bool bPlaying;
     bool bLoop;
     bool bNewFrame;
+    bool bDone;
     float _speed;
     float _framerate;
     

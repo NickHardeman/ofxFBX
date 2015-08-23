@@ -16,6 +16,7 @@ ofxFBXAnimation::ofxFBXAnimation() {
     bNewFrame   = false;
     _speed      = 1.f;
     setFramerate( 30.f );
+    bDone       = false;
 }
 
 //--------------------------------------------------------------
@@ -46,20 +47,39 @@ void ofxFBXAnimation::update() {
     bNewFrame = false;
     
 //    cout << "speed: " << _speed << endl;
-    float clampFrameTime    = ofClamp( getFramerate() * _speed, 0.0001, 600);
+    float tspeed            = _speed;
+    if( tspeed < 0 ) tspeed *= -1.f;
+    float clampFrameTime    = ofClamp( getFramerate() * tspeed, 0.0001, 600);
     float tframeTime        = (1.f / clampFrameTime) * 1000.f;
     
     if(bPlaying) {
         if(ofGetElapsedTimeMillis() - lastUpdateTimeMillis >= tframeTime ) {
             bNewFrame = true;
-            fbxCurrentTime += (fbxFrameTime);
+            if( _speed >= 0 ) {
+                fbxCurrentTime += (fbxFrameTime);
+            } else {
+                fbxCurrentTime -= (fbxFrameTime);
+            }
             lastUpdateTimeMillis = ofGetElapsedTimeMillis();
         }
     }
     
     if(bLoop) {
-        if(fbxCurrentTime > fbxStopTime ) {
-            fbxCurrentTime = fbxStartTime;
+        
+        if( _speed >= 0 ) {
+            if(fbxCurrentTime > fbxStopTime ) {
+                bDone = true;
+                fbxCurrentTime = fbxStartTime;
+            } else {
+                bDone = false;
+            }
+        } else {
+            if(fbxCurrentTime < fbxStartTime ) {
+                bDone = true;
+                fbxCurrentTime = fbxStopTime;
+            } else {
+                bDone = false;
+            }
         }
     }
 }
@@ -107,6 +127,11 @@ bool ofxFBXAnimation::isPlaying() {
 //--------------------------------------------------------------
 bool ofxFBXAnimation::isPaused() {
     return !bPlaying;
+}
+
+//--------------------------------------------------------------
+bool ofxFBXAnimation::isDone() {
+    return bDone;
 }
 
 //--------------------------------------------------------------
