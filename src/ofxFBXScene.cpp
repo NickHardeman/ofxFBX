@@ -129,8 +129,6 @@ bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
     
     // populate bones //
     if( _settings.importBones ) {
-//        populateBonesRecursive( lScene->GetRootNode(), currentFbxAnimationLayer );
-//        parentBonesRecursive( lScene->GetRootNode() );
         constructSkeletons( lScene->GetRootNode(), currentFbxAnimationLayer );
     }
     
@@ -351,13 +349,6 @@ void ofxFBXScene::populateAnimations( vector<ofxFBXAnimation>& aInVector) {
 
 //--------------------------------------------------------------
 void ofxFBXScene::populateSkeletons( vector< shared_ptr<ofxFBXSkeleton> >& aInSkeletons ) {
-//    list<ofxFBXSkeleton>::iterator itSkeletons;
-//    aInSkeletons.resize( skeletonList.size() );
-//    int i = 0;
-//    for( itSkeletons = skeletonList.begin(); itSkeletons != skeletonList.end(); itSkeletons++){
-//        aInSkeletons[i] = (*itSkeletons);
-//        i++;
-//    }
     aInSkeletons.resize( skeletons.size() );
     for( int i = 0; i < skeletons.size(); i++ ) {
         ofxFBXSkeleton tskeleton = *skeletons[i].get();
@@ -387,7 +378,7 @@ void ofxFBXScene::populateMeshesRecursive( FbxNode* pNode, FbxAnimLayer* pAnimLa
                 shared_ptr<ofxFBXMesh> mesh = meshes.back();
                 mesh->setup( pNode );
                 
-    //            cout << "ofxFBXScene :: populateMeshesRecursive : name = " << pNode->GetNameOnly() << endl;
+//            cout << "ofxFBXScene :: populateMeshesRecursive : name = " << pNode->GetNameOnly() << endl;
                 
                 FbxAMatrix lGlobalPosition = GetGlobalPosition(pNode, FBXSDK_TIME_INFINITE, NULL );
                 
