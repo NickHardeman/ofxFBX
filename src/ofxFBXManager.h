@@ -48,7 +48,6 @@ public:
     int getNumSkeletons();
     int getNumBones();
     ofxFBXBone* getBone( string aBoneName, int aSkeletonIndex=0 );
-//    ofMatrix4x4 getBoneGlobalTransform( string aBoneName, int aSkeletonIndex=0 );
     string getSkeletonInfo();
     
     bool hasPoses();

@@ -352,15 +352,6 @@ ofxFBXBone* ofxFBXManager::getBone( string aBoneName, int aSkeletonIndex ) {
 }
 
 //--------------------------------------------------------------
-//ofMatrix4x4 ofxFBXManager::getBoneGlobalTransform( string aBoneName, int aSkeletonIndex ) {
-//    ofxFBXBone* tbone = getBone( aBoneName, aSkeletonIndex );
-//    if( tbone != NULL ) {
-//        return tbone->getGlobalTransformMatrix() * getGlobalTransformMatrix();
-//    }
-//    return ofMatrix4x4();
-//}
-
-//--------------------------------------------------------------
 string ofxFBXManager::getSkeletonInfo() {
     string retStr = "";
     for( int i = 0; i < skeletons.size(); i++ ) {
