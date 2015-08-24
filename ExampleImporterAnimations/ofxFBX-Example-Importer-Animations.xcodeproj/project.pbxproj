@@ -10,7 +10,6 @@
 		2E9F351E1AB0A3A600107F09 /* GetPosition.cxx in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F35041AB0A3A600107F09 /* GetPosition.cxx */; };
 		2E9F351F1AB0A3A600107F09 /* ofxFBXAnimation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F35071AB0A3A600107F09 /* ofxFBXAnimation.cpp */; };
 		2E9F35201AB0A3A600107F09 /* ofxFBXBone.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F35091AB0A3A600107F09 /* ofxFBXBone.cpp */; };
-		2E9F35211AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F350B1AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.cpp */; };
 		2E9F35221AB0A3A600107F09 /* ofxFBXCluster.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F350D1AB0A3A600107F09 /* ofxFBXCluster.cpp */; };
 		2E9F35231AB0A3A600107F09 /* ofxFBXManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F350F1AB0A3A600107F09 /* ofxFBXManager.cpp */; };
 		2E9F35241AB0A3A600107F09 /* ofxFBXMesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F35111AB0A3A600107F09 /* ofxFBXMesh.cpp */; };
@@ -79,8 +78,6 @@
 		2E9F35081AB0A3A600107F09 /* ofxFBXAnimation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFBXAnimation.h; sourceTree = "<group>"; };
 		2E9F35091AB0A3A600107F09 /* ofxFBXBone.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxFBXBone.cpp; sourceTree = "<group>"; };
 		2E9F350A1AB0A3A600107F09 /* ofxFBXBone.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFBXBone.h; sourceTree = "<group>"; };
-		2E9F350B1AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxFBXCachedSkeletonAnimation.cpp; sourceTree = "<group>"; };
-		2E9F350C1AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFBXCachedSkeletonAnimation.h; sourceTree = "<group>"; };
 		2E9F350D1AB0A3A600107F09 /* ofxFBXCluster.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxFBXCluster.cpp; sourceTree = "<group>"; };
 		2E9F350E1AB0A3A600107F09 /* ofxFBXCluster.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFBXCluster.h; sourceTree = "<group>"; };
 		2E9F350F1AB0A3A600107F09 /* ofxFBXManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxFBXManager.cpp; sourceTree = "<group>"; };
@@ -171,8 +168,6 @@
 				2E9F35081AB0A3A600107F09 /* ofxFBXAnimation.h */,
 				2E9F35091AB0A3A600107F09 /* ofxFBXBone.cpp */,
 				2E9F350A1AB0A3A600107F09 /* ofxFBXBone.h */,
-				2E9F350B1AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.cpp */,
-				2E9F350C1AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.h */,
 				2E9F350D1AB0A3A600107F09 /* ofxFBXCluster.cpp */,
 				2E9F350E1AB0A3A600107F09 /* ofxFBXCluster.h */,
 				2E9F350F1AB0A3A600107F09 /* ofxFBXManager.cpp */,
@@ -369,7 +364,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2E9F35241AB0A3A600107F09 /* ofxFBXMesh.cpp in Sources */,
-				2E9F35211AB0A3A600107F09 /* ofxFBXCachedSkeletonAnimation.cpp in Sources */,
 				E4B69E200A3A1BDC003C02F2 /* main.cpp in Sources */,
 				2E9F35271AB0A3A600107F09 /* ofxFBXPose.cpp in Sources */,
 				2E9F35231AB0A3A600107F09 /* ofxFBXManager.cpp in Sources */,
