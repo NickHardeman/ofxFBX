@@ -6,7 +6,7 @@ void ofApp::setup() {
     
     ofxFBXSceneSettings settings;
     
-    string filename = "AgentWalk.fbx";
+    string filename = "astroBoy_walk.fbx";
     
     if( scene.load(filename, settings) ) {
         cout << "ofApp :: loaded the scene OK" << endl;
