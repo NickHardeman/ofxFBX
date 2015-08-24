@@ -29,6 +29,4 @@ public:
     bool bDrawBones;
     
     ofLight light;
-    
-    
 };

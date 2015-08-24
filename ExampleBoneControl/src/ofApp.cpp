@@ -15,27 +15,38 @@ void ofApp::setup() {
     }
     
     cam.lookAt( ofVec3f(0,0,0) );
-    cam.setDistance( 550 );
-    cam.setFarClip(6000);
+    cam.setDistance( 20 );
+    cam.setFarClip(100);
     cam.setNearClip( .5f );
     
     fbxMan.setup( &scene );
     fbxMan.setAnimation(0);
+    fbxMan.setPosition( 0, -7, 0 );
+    
+    cout << fbxMan.getSkeletonInfo() << endl;
     
     bRenderNormals  = false;
     bRenderMeshes   = true;
     bDrawBones      = false;
-    
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
     
-//    light.setPosition( cos(ofGetElapsedTimef()) * 20.f, sin(ofGetElapsedTimef()*4) * 50 + 10, sin(ofGetElapsedTimef()) * 20.f + 100);
+    light.setPosition( cos(ofGetElapsedTimef()*2.) * 7, 4 + sin( ofGetElapsedTimef() ) * 2.5, 10  );
+    
+    ofVec3f target( ofMap( ofGetMouseX(), 0, ofGetWidth(), -10, 10, true), fbxMan.getPosition().y, fbxMan.getPosition().z+10 );
+    fbxMan.lookAt( target );
+    fbxMan.pan( 180 );
     
     fbxMan.update();
     
     // perform any bone manipulation here //
+    ofxFBXBone* bone = fbxMan.getBone("head");
+    if( bone != NULL ) {
+        bone->disableAnimation(true);
+        bone->pointTo( light.getPosition(), ofVec3f(1,0,0) ) ;
+    }
     
     fbxMan.lateUpdate();
     
@@ -63,17 +74,16 @@ void ofApp::draw() {
     ofDisableLighting();
     
     if(bDrawBones) {
-        fbxMan.drawSkeletons( 6. );
+        fbxMan.drawSkeletons( 0.5 );
     }
     
     if( bRenderNormals ) {
         ofSetColor( 255, 0, 255 );
-        fbxMan.drawMeshNormals( 1, false );
+        fbxMan.drawMeshNormals( 0.5, false );
     }
     
-    
     ofSetColor( light.getDiffuseColor() );
-    light.draw();
+    ofDrawSphere( light.getPosition(), 1 );
     
     cam.end();
     
