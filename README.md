@@ -2,6 +2,8 @@
 
 ![FBX version 7.4](https://raw.githubusercontent.com/NickHardeman/ofxFBX/master/ReadMeImages/Screen%20Shot%202015-03-11%20at%201.45.10%20PM.png)
 
+![FBX version 7.4](ReadMeImages/fbxout.gif)
+
 Currently only supporting OSX. Tested with OF v0.08 and OSX 10.8-10.10.
 
 ### WIP. Currently adding features to this addon.
