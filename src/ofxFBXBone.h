@@ -34,6 +34,9 @@ public:
     void lateUpdate();
     void draw( float aLen = 6.f, bool aBDrawAxes = true);
     
+    void pointTo( ofVec3f aTarget );
+    void pointTo( ofVec3f aTarget, ofVec3f aAxis );
+    
     bool isLimb();
     bool hasSkeletonParent();
     

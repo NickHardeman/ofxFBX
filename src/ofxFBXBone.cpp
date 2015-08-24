@@ -138,6 +138,22 @@ void ofxFBXBone::updateFbxTransformLocal() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXBone::pointTo( ofVec3f aTarget ) {
+    ofVec3f axis( 1, 0, 0 );
+    pointTo( aTarget, axis );
+}
+
+//--------------------------------------------------------------
+void ofxFBXBone::pointTo( ofVec3f aTarget, ofVec3f aAxis ) {
+    ofVec3f diff = aTarget - getGlobalPosition();
+    diff.normalize();
+    ofQuaternion tquat;
+    ofVec3f txaxis = ofVec3f(1,0,0) * origGlobalRotation;
+    tquat.makeRotate( txaxis, diff );
+    setGlobalOrientation( origGlobalRotation * tquat );
+}
+
+//--------------------------------------------------------------
 bool ofxFBXBone::isLimb() {
     FbxSkeleton* lSkeleton = getFbxSkeleton();
     if(lSkeleton) {
