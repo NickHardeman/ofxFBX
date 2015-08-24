@@ -1,6 +1,6 @@
 # ofxFBX
 
-![FBX version 7.4](https://raw.githubusercontent.com/NickHardeman/ofxFBX/master/ReadMeImages/Screen%20Shot%202015-03-11%20at%201.45.10%20PM.png)
+![FBX version 7.4](ReadMeImages/fbxAnim.gif)
 
 ![FBX version 7.4](ReadMeImages/fbxout.gif)
 
