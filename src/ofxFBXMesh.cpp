@@ -541,7 +541,7 @@ ofMesh& ofxFBXMesh::getOFMesh() {
 //--------------------------------------------------------------
 void ofxFBXMesh::computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer ) {
     int lBlendShapeDeformerCount = fbxMesh->GetDeformerCount(FbxDeformer::eBlendShape);
-    cout << "Computing blendshapes for " << getName() << endl;
+//    cout << "Computing blendshapes for " << getName() << endl;
     for(int lBlendShapeIndex = 0; lBlendShapeIndex<lBlendShapeDeformerCount; ++lBlendShapeIndex) {
         FbxBlendShape* lBlendShape = (FbxBlendShape*)fbxMesh->GetDeformer(lBlendShapeIndex, FbxDeformer::eBlendShape);
         

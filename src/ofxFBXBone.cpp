@@ -111,7 +111,7 @@ void ofxFBXBone::draw( float aLen, bool aBDrawAxes ) {
     }
 //    if(!hasSkeletonParent()) return;
 //    if(!isLimb()) return;
-    if( getParent() != NULL ) {
+    if( getParent() != NULL && !bIsRoot ) {
         //ofSetColor(255, 0, 130 );
         ofVec3f ppos = getParent()->getGlobalPosition();
         ofLine( ppos, getGlobalPosition() );
