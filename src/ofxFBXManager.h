@@ -44,12 +44,11 @@ public:
     bool hasAnimations();
     
     vector< shared_ptr<ofxFBXSkeleton> >& getSkeletons();
-    void resetSkeletons();
     bool hasBones();
     int getNumSkeletons();
     int getNumBones();
     ofxFBXBone* getBone( string aBoneName, int aSkeletonIndex=0 );
-    ofMatrix4x4 getBoneGlobalTransform( string aBoneName, int aSkeletonIndex=0 );
+//    ofMatrix4x4 getBoneGlobalTransform( string aBoneName, int aSkeletonIndex=0 );
     string getSkeletonInfo();
     
     bool hasPoses();

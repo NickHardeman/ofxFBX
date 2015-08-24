@@ -68,31 +68,35 @@ public:
 private:
     
     void computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer );
-    void computeSkinDeformation( FbxAMatrix& pGlobalPosition, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxVector4* pVertexArray, FbxPose* pPose );
+    void computeSkinDeformation( FbxAMatrix& pGlobalPosition, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxVector4* pVertexArray, FbxVector4* pNormalsArray, FbxPose* pPose );
     void computeLinearDeformation(FbxAMatrix& pGlobalPosition,
                                   FbxMesh* pMesh,
                                   FbxTime& pTime,
                                   FbxVector4* pVertexArray,
-                                  FbxPose* pPose );
+                                  FbxPose* pPose,
+                                  bool bNormals);
     void computeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition,
                                           FbxMesh* pMesh,
                                           FbxTime& pTime,
                                           FbxVector4* pVertexArray,
-                                          FbxPose* pPose );
+                                          FbxPose* pPose,
+                                          bool bNormals );
     void computeClusterDeformation(FbxAMatrix& pGlobalPosition,
                                    FbxMesh* pMesh,
                                    FbxCluster* pCluster,
                                    FbxAMatrix& pVertexTransformMatrix,
                                    FbxTime pTime,
-                                   FbxPose* pPose);
+                                   FbxPose* pPose,
+                                   bool bNormals);
     
-    void computeNormals( ofMesh* aMesh, FbxVector4* pVertexArray );
+    void populateNormals( FbxVector4* pNormalsArray );
     
     vector<ofxFBXSubMesh> subMeshes;
     ofVbo veebs;
 	ofMesh mesh;
 	ofMesh original;
 	FbxMesh* fbxMesh;
+    FbxVector4* mNormalsArray;
     bool bAllMappedByControlPoint;
 };
 

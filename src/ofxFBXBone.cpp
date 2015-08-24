@@ -8,11 +8,12 @@
 
 #include "ofxFBXBone.h"
 
+//--------------------------------------------------------------
 ofxFBXBone::ofxFBXBone() {
-//    disableExternalControl();
     bExists         = false;
     sourceBone      = NULL;
     parentBoneName  = "";
+    bIsRoot         = false;
     enableAnimation();
 }
 
@@ -27,18 +28,16 @@ bool ofxFBXBone::doesExist() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXBone::setAsRoot() {
+    bIsRoot = true;
+}
+
+//--------------------------------------------------------------
 void ofxFBXBone::setup( FbxNode* pNode ) {
     ofxFBXNode::setup( pNode );
     fbxNode = pNode;
     
-//    FbxTime ttime(0);
-//    parentGlobalTransform = ofGetGlobalTransform( fbxNode->GetParent(), FBXSDK_TIME_INFINITE, NULL );
-//    origTransform = ofGetGlobalTransform( fbxNode, ttime, NULL );
     setTransformMatrix( ofGetGlobalTransform( fbxNode, FBXSDK_TIME_INFINITE, NULL ) );
-//    origRot = toOf(pNode->LclRotation.Get());
-    
-//    origNode.setTransformMatrix( ofGetGlobalTransform( fbxNode, FBXSDK_TIME_INFINITE, NULL ) );
-    
     bExists = true;
     
     updateFbxTransform();
@@ -57,26 +56,22 @@ void ofxFBXBone::setupFromSourceBones() {
             bones[ sbone->getName() ].sourceBone = sbone;
             bones[ sbone->getName() ].fbxNode    = sbone->fbxNode;
             bones[ sbone->getName() ].setupFromSourceBones();
-//            bones[ sbone->getName() ] = tbone;
         }
     }
 }
 
 //--------------------------------------------------------------
 void ofxFBXBone::cacheStartTransforms() {
-//    setParent( *aParent, true );
-//    origMatrixLocal     = getLocalTransformMatrix();
     origLocalPosition   = getPosition();
     origLocalRotation   = getOrientationQuat();
     origGlobalRotation  = getGlobalOrientation();
-//    control.cacheStartTransforms();
 }
 
 //--------------------------------------------------------------
 void ofxFBXBone::update( FbxTime& pTime, FbxPose* pPose ) {
     
-    if( isAnimationEnabled() ) {        
-        if(getParent() != NULL ) {
+    if( isAnimationEnabled() ) {
+        if( !bIsRoot ) {
             setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
         } else {
             FbxAMatrix tmatrix = fbxNode->EvaluateGlobalTransform( pTime );
@@ -92,14 +87,6 @@ void ofxFBXBone::update( FbxTime& pTime, FbxPose* pPose ) {
 
 //--------------------------------------------------------------
 void ofxFBXBone::lateUpdate() {
-    
-//    string parentNull = getParent() == NULL ? "yes" : "no";
-//    string sourceNull = sourceBone == NULL ? "yes" : "no";
-//    cout << getName() << " bones.size(): " << bones.size() << " is source null: " << sourceNull << endl;
-    
-//    map<string, ofxFBXBone >::iterator it;
-//    for(it = bones.begin(); it != bones.end(); ++it ) {
-//        ofxFBXBone* bone    = &it->second;
     ofxFBXBone* sbone   = sourceBone;//sourceBones[bone->getName()];//getSourceBone( it->first );
     if( sbone != NULL ) {
 //            sbone->setGlobalOrientation( bone->getGlobalOrientation() );
@@ -137,21 +124,6 @@ void ofxFBXBone::draw( float aLen, bool aBDrawAxes ) {
 }
 
 //--------------------------------------------------------------
-void ofxFBXBone::onPositionChanged() {
-//    updateFbxTransform();
-}
-
-//--------------------------------------------------------------
-void ofxFBXBone::onOrientationChanged() {
-//    updateFbxTransform();
-}
-
-//--------------------------------------------------------------
-void ofxFBXBone::onScaleChanged() {
-//    updateFbxTransform();
-}
-
-//--------------------------------------------------------------
 void ofxFBXBone::updateFbxTransform() {
     fbxTransform = toFbx( getGlobalTransformMatrix() );
 }
@@ -186,21 +158,6 @@ bool ofxFBXBone::hasSkeletonParent() {
 FbxSkeleton* ofxFBXBone::getFbxSkeleton() {
     return (FbxSkeleton*) fbxNode->GetNodeAttribute();
 }
-
-//--------------------------------------------------------------
-//void ofxFBXBone::enableExternalControl() {
-//    bExternalControlEnabled = true;
-//}
-//
-////--------------------------------------------------------------
-//void ofxFBXBone::disableExternalControl() {
-//    bExternalControlEnabled = false;
-//}
-//
-////--------------------------------------------------------------
-//bool ofxFBXBone::isExternalControlEnabled() {
-//    return bExternalControlEnabled;
-//}
 
 //--------------------------------------------------------------
 void ofxFBXBone::enableAnimation( bool bRecursively ) {
@@ -298,7 +255,6 @@ ofxFBXBone* ofxFBXBone::getBone( string aName ) {
     ofxFBXBone* tbone = NULL;
     map< string, ofxFBXBone >::iterator it;
     findBoneRecursive( aName, tbone );
-//    cout << "is tbone null = " << (tbone == NULL?"yes":"no") << endl;
     if( tbone ) {
         return tbone;
     }
@@ -309,13 +265,10 @@ ofxFBXBone* ofxFBXBone::getBone( string aName ) {
 void ofxFBXBone::findBoneRecursive( string aName, ofxFBXBone*& returnBone ) {
     
     if( !returnBone ) {
-//        cout << getName() << " search name: " << aName << endl;
         map< string, ofxFBXBone >::iterator it;
         for(it = bones.begin(); it != bones.end(); ++it ) {
             if( it->second.getName() == aName ) {
                 returnBone = (&it->second);
-//                returnBone = shared_ptr< ofxFBXBone >( &returnBone );
-//                cout << "***** it has been found ****** but is it null? " << (returnBone == NULL?"yes":"no") << endl;
                 break;
             }
             it->second.findBoneRecursive( aName, returnBone );

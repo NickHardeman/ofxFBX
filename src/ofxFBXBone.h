@@ -26,17 +26,13 @@ public:
     
     bool doesExist();
     
+    void setAsRoot();
     void setup( FbxNode* pNode );
     void setupFromSourceBones();
     void cacheStartTransforms();
     void update( FbxTime& pTime, FbxPose* pPose );
     void lateUpdate();
     void draw( float aLen = 6.f, bool aBDrawAxes = true);
-    
-    void reset();
-    void onPositionChanged();
-	void onOrientationChanged();
-	void onScaleChanged();
     
     bool isLimb();
     bool hasSkeletonParent();
@@ -71,11 +67,13 @@ public:
     ofQuaternion origLocalRotation;
     ofQuaternion origGlobalRotation;
     ofVec3f origLocalPosition;
+    ofMatrix4x4 origGlobalTransform;
+    ofMatrix4x4 origLocalTransform;
     
 protected:
     void findBoneRecursive( string aName, ofxFBXBone*& returnBone );
     void populateBonesRecursive( map< string, ofxFBXBone* >& aBoneMap );
-    bool bExists;
+    bool bExists, bIsRoot;
     
 //    bool bExternalControlEnabled;
     bool bUpdateFromAnimation;

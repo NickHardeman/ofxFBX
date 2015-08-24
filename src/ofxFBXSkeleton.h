@@ -40,7 +40,6 @@ public:
     void disableAnimation();
     
     int getNumBones();
-    void reset();
     string toString();
     
     ofxFBXBone root;

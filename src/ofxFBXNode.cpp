@@ -8,22 +8,33 @@
 
 #include "ofxFBXNode.h"
 
-void ofxFBXNode::setup( FbxNode *pNode ) {
-    setName( pNode->GetNameOnly() );
-    
-//    if( pNode->GetRotationActive() ) {
-//        if(pNode)
-//    }
+//----------------------------------------
+ofxFBXNode::ofxFBXNode() {
+//    parent          = NULL;
+//    globalParent    = NULL;
 }
 
+//----------------------------------------
+ofxFBXNode::~ofxFBXNode() {
+    
+}
+
+//----------------------------------------
+void ofxFBXNode::setup( FbxNode *pNode ) {
+    setName( pNode->GetNameOnly() );
+}
+
+//----------------------------------------
 string ofxFBXNode::getName() {
     return name;
 }
 
+//----------------------------------------
 FbxString ofxFBXNode::getFbxName() {
     return FbxString( name.c_str() );
 }
 
+//----------------------------------------
 void ofxFBXNode::setName( FbxString aName ) {
     name = aName;
 }

@@ -29,6 +29,8 @@ void ofxFBXSkeleton::setup( FbxNode *pNode ) {
 void ofxFBXSkeleton::reconstructNodeParenting() {
     ofxFBXBone tbone = *rootSource;
     root = tbone;
+    
+    root.setAsRoot();
     root.sourceBone = rootSource;
     root.setupFromSourceBones();
     
@@ -42,7 +44,7 @@ void ofxFBXSkeleton::reconstructNodeParenting() {
                 it->second->setParent( *tempBones[it->second->parentBoneName] );
             }
         }
-    } 
+    }
 }
 
 //--------------------------------------------------------------
@@ -98,14 +100,6 @@ void ofxFBXSkeleton::disableAnimation() {
 //--------------------------------------------------------------
 int ofxFBXSkeleton::getNumBones() {
     return root.getNumBones();
-}
-
-//--------------------------------------------------------------
-void ofxFBXSkeleton::reset() {
-    map<string, ofxFBXBone >::iterator it;
-//    for(it = bones.begin(); it != bones.end(); ++it ) {
-//        it->second.reset();
-//    }
 }
 
 //--------------------------------------------------------------

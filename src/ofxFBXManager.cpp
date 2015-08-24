@@ -40,6 +40,12 @@ void ofxFBXManager::setup( ofxFBXScene* aScene ) {
     }
     
     aScene->populateSkeletons( skeletons );
+    
+    for( int i = 0; i < skeletons.size(); i++ ) {
+        skeletons[i]->setParent( *this );
+        skeletons[i]->root.setParent( *skeletons[i].get() );
+    }
+    
     aScene->populatePoses( poses );
     
 }
@@ -73,16 +79,9 @@ void ofxFBXManager::update() {
 //    cout << "ofxFBXManager :: update : animations | " << ofGetElapsedTimef() << endl;
     
     if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
-        
-//        if( cachedSkeletonAnimations.size() ) {
-//            for(int i = 0; i < skeletons.size(); i++ ) {
-//                cachedSkeletonAnimations[animationIndex][i].update( animations[animationIndex].getFrameNum(), skeletons[i] );
-//            }
-//        } else {
-            for(int i = 0; i < skeletons.size(); i++ ) {
-                skeletons[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
-            }
-//        }
+        for(int i = 0; i < skeletons.size(); i++ ) {
+            skeletons[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
+        }
     }
 }
 
@@ -156,11 +155,9 @@ void ofxFBXManager::drawMeshNormals( float aLen, bool aBFaceNormals ) {
 
 //--------------------------------------------------------------
 void ofxFBXManager::drawSkeletons( float aLen, bool aBDrawAxes ) {
-    transformGL();
     for(int i = 0; i < skeletons.size(); i++ ) {
         skeletons[i]->draw( aLen, aBDrawAxes );
     }
-    restoreTransformGL();
 }
 
 //--------------------------------------------------------------
@@ -328,15 +325,6 @@ vector< shared_ptr<ofxFBXSkeleton> >& ofxFBXManager::getSkeletons() {
     return skeletons;
 }
 
-// called after we manipulate the skeletons, so that if other items are using
-// the bones, than it will reset them //
-//--------------------------------------------------------------
-void ofxFBXManager::resetSkeletons() {
-    for( int i = 0; i < skeletons.size(); i++ ) {
-        skeletons[i]->reset();
-    }
-}
-
 //--------------------------------------------------------------
 bool ofxFBXManager::hasBones() {
     return getNumBones() > 0;
@@ -364,19 +352,19 @@ ofxFBXBone* ofxFBXManager::getBone( string aBoneName, int aSkeletonIndex ) {
 }
 
 //--------------------------------------------------------------
-ofMatrix4x4 ofxFBXManager::getBoneGlobalTransform( string aBoneName, int aSkeletonIndex ) {
-    ofxFBXBone* tbone = getBone( aBoneName, aSkeletonIndex );
-    if( tbone != NULL ) {
-        return tbone->getGlobalTransformMatrix() * getGlobalTransformMatrix();
-    }
-    return ofMatrix4x4();
-}
+//ofMatrix4x4 ofxFBXManager::getBoneGlobalTransform( string aBoneName, int aSkeletonIndex ) {
+//    ofxFBXBone* tbone = getBone( aBoneName, aSkeletonIndex );
+//    if( tbone != NULL ) {
+//        return tbone->getGlobalTransformMatrix() * getGlobalTransformMatrix();
+//    }
+//    return ofMatrix4x4();
+//}
 
 //--------------------------------------------------------------
 string ofxFBXManager::getSkeletonInfo() {
     string retStr = "";
     for( int i = 0; i < skeletons.size(); i++ ) {
-        retStr += skeletons[i]->toString();
+        retStr += ofToString(i,0)+" - " + skeletons[i]->toString();
     }
     return retStr;
 }

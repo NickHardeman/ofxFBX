@@ -491,7 +491,7 @@ void ofxFBXScene::parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeleto
             
 //            if(pNode->GetSkeleton()->GetSkeletonType() == FbxSkeleton::eRoot || pNode->GetSkeleton()->GetSkeletonType() == FbxSkeleton::eEffector) {
             if(pNode->GetSkeleton()->IsSkeletonRoot() ) {
-                cout << "parentBonesRecursive :: " << pNode->GetName() << " is the ROOT! " << endl;
+//                cout << "parentBonesRecursive :: " << pNode->GetName() << " is the ROOT! " << endl;
                 aSkeletonBases.push_back( pNode );
             }
         }
