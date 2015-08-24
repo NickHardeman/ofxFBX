@@ -203,7 +203,7 @@ void ofxFBXScene::cacheTexturesInScene( FbxScene* pScene ) {
             }
             
             if(!bFoundTexture) {
-                ofLogWarning("Could not find texture ") << lFileName;
+                ofLogWarning("Could not find texture ") << filepath;
                 continue;
             }
             
@@ -250,7 +250,14 @@ void ofxFBXScene::deleteCachedTexturesInScene( FbxScene* pScene ) {
 bool ofxFBXScene::isValidTexturePath( string aPathToTexture ) {
     ofFile tfile = (string)aPathToTexture;
     if(!tfile.exists()) return false;
-    return (tfile.getExtension() == "tga" || tfile.getExtension() == "jpg" || tfile.getExtension() == "png" || tfile.getExtension() == "bmp");
+    bool bGoodToGo = false;
+    if(tfile.getExtension() == "tga") bGoodToGo = true;
+    if(tfile.getExtension() == "jpg") bGoodToGo = true;
+    if(tfile.getExtension() == "png") bGoodToGo = true;
+    if(tfile.getExtension() == "bmp") bGoodToGo = true;
+    if(tfile.getExtension() == "tif") bGoodToGo = true;
+    if(tfile.getExtension() == "tiff") bGoodToGo = true;
+    return bGoodToGo;
 }
 
 #pragma mark - Materials
