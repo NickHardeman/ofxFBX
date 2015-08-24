@@ -39,6 +39,8 @@ void ofApp::update() {
     fbxMan.lookAt( target );
     fbxMan.pan( 180 );
     
+    fbxMan.getCurrentAnimation().setSpeed( ofMap( ofGetMouseY(), 100, ofGetHeight()-100, 0.5, 2.5, true ));
+    
     fbxMan.update();
     
     // perform any bone manipulation here //
@@ -81,6 +83,11 @@ void ofApp::draw() {
         ofSetColor( 255, 0, 255 );
         fbxMan.drawMeshNormals( 0.5, false );
     }
+    
+    ofNoFill();
+    ofSetColor( 50, 50, 50 );
+    ofDrawBox( 0, 0, 0, 14 );
+    ofFill();
     
     ofSetColor( light.getDiffuseColor() );
     ofDrawSphere( light.getPosition(), 1 );
