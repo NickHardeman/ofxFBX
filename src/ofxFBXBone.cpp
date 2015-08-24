@@ -87,12 +87,9 @@ void ofxFBXBone::update( FbxTime& pTime, FbxPose* pPose ) {
 
 //--------------------------------------------------------------
 void ofxFBXBone::lateUpdate() {
-    ofxFBXBone* sbone   = sourceBone;//sourceBones[bone->getName()];//getSourceBone( it->first );
+    ofxFBXBone* sbone   = sourceBone;
     if( sbone != NULL ) {
-//            sbone->setGlobalOrientation( bone->getGlobalOrientation() );
         sbone->setTransformMatrix( getLocalTransformMatrix() );
-//        sbone->setGlobalPosition( getGlobalPosition() );
-//        sbone->setGlobalOrientation( getGlobalOrientation() );
         sbone->updateFbxTransform();
     }
 
@@ -148,7 +145,7 @@ void ofxFBXBone::pointTo( ofVec3f aTarget, ofVec3f aAxis ) {
     ofVec3f diff = aTarget - getGlobalPosition();
     diff.normalize();
     ofQuaternion tquat;
-    ofVec3f txaxis = ofVec3f(1,0,0) * origGlobalRotation;
+    ofVec3f txaxis = aAxis * origGlobalRotation;
     tquat.makeRotate( txaxis, diff );
     setGlobalOrientation( origGlobalRotation * tquat );
 }

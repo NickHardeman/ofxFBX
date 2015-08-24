@@ -80,7 +80,7 @@ private:
                                           FbxTime& pTime,
                                           FbxVector4* pVertexArray,
                                           FbxPose* pPose,
-                                          bool bNormals );
+                                          bool bNormals);
     void computeClusterDeformation(FbxAMatrix& pGlobalPosition,
                                    FbxMesh* pMesh,
                                    FbxCluster* pCluster,
