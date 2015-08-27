@@ -17,6 +17,7 @@ ofxFBXManager::ofxFBXManager() {
     dummyAnimation.name             = "dummy";
     poseIndex                       = 0;
     bPosesEnabled                   = false;
+    currentAnimationStack           = NULL;
 }
 
 //--------------------------------------------------------------
@@ -76,13 +77,19 @@ void ofxFBXManager::update() {
     
     animations[animationIndex].update();
     
-//    cout << "ofxFBXManager :: update : animations | " << ofGetElapsedTimef() << endl;
+    if( currentAnimationStack != NULL ) {
+        fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
+    }
     
-    if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
+//    cout << "ofxFBXManager :: update : animations | " << ofGetElapsedTimef() << endl;
+    // TODO: is there a way to check if we need to update the bone positions? Right now it always updates.
+    // If other fbxManagers are playing animations at different times or moving around bones, then it will get weird if it doesn't
+    // update.  //
+//    if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
         for(int i = 0; i < skeletons.size(); i++ ) {
             skeletons[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
         }
-    }
+//    }
 }
 
 //--------------------------------------------------------------
@@ -253,16 +260,16 @@ void ofxFBXManager::setAnimation( int aIndex ) {
         aIndex = ofClamp(aIndex, 0, animations.size()-1);
         ofLogWarning("ofxFBXManager :: setAnimation : index to high, clamping to ") << aIndex;
     }
-    FbxAnimStack * lCurrentAnimationStack = fbxScene->getFBXScene()->FindMember<FbxAnimStack>( (&animations[aIndex].fbxname)->Buffer() );
-    if (lCurrentAnimationStack == NULL) {
+    currentAnimationStack = fbxScene->getFBXScene()->FindMember<FbxAnimStack>( (&animations[aIndex].fbxname)->Buffer() );
+    if (currentAnimationStack == NULL) {
         // this is a problem. The anim stack should be found in the scene!
         ofLogWarning("ofxFBXManager :: setAnimation : the anim stack was not found in the scene!");
         return;
     }
-    int numAnimLayers = lCurrentAnimationStack->GetMemberCount<FbxAnimLayer>();
-    cout << "Number of animation layers= " << numAnimLayers << endl;
-    currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
-    fbxScene->getFBXScene()->GetEvaluator()->SetContext( lCurrentAnimationStack );
+//    int numAnimLayers = lCurrentAnimationStack->GetMemberCount<FbxAnimLayer>();
+//    cout << "Number of animation layers= " << numAnimLayers << endl;
+    currentFbxAnimationLayer = currentAnimationStack->GetMember<FbxAnimLayer>();
+    fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
     animationIndex = aIndex;
 }
 

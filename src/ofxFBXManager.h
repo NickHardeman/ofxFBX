@@ -71,6 +71,7 @@ protected:
     vector<ofxFBXAnimation> animations;
     
     FbxAnimLayer* currentFbxAnimationLayer;
+    FbxAnimStack* currentAnimationStack;
     ofxFBXScene* fbxScene;
     
     int animationIndex;
