@@ -453,7 +453,7 @@ void ofxFBXScene::parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeleto
                         bonePtr->parentBoneName     = bonePtrParent->getName();
                         bonePtr->setParent( *bonePtrParent, true );
                         bonePtr->setScale( 1.f );
-                        bonePtr->level = aBoneLevel;
+//                        bonePtr->level = aBoneLevel;
                         
 //                        if( bonePtrParent ) {
 //                            bonePtrParent->bones.push_back( shared_ptr< ofxFBXBone >( new ofxFBXBone( *bonePtr )));

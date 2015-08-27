@@ -62,9 +62,11 @@ void ofxFBXBone::setupFromSourceBones() {
 
 //--------------------------------------------------------------
 void ofxFBXBone::cacheStartTransforms() {
-    origLocalPosition   = getPosition();
-    origLocalRotation   = getOrientationQuat();
+    // cache the orientations for use later //
     origGlobalRotation  = getGlobalOrientation();
+    origLocalRotation   = getOrientationQuat();
+    origGlobalTransform = getGlobalTransformMatrix();
+    origLocalTransform  = getLocalTransformMatrix();
 }
 
 //--------------------------------------------------------------
@@ -145,7 +147,7 @@ void ofxFBXBone::pointTo( ofVec3f aTarget, ofVec3f aAxis ) {
     ofVec3f diff = aTarget - getGlobalPosition();
     diff.normalize();
     ofQuaternion tquat;
-    ofVec3f txaxis = aAxis * origGlobalRotation;
+    ofVec3f txaxis = aAxis * origGlobalTransform.getRotate();
     tquat.makeRotate( txaxis, diff );
     setGlobalOrientation( origGlobalRotation * tquat );
 }
@@ -200,13 +202,8 @@ bool ofxFBXBone::isAnimationEnabled() {
 }
 
 //--------------------------------------------------------------
-ofQuaternion ofxFBXBone::getOriginalLocalRotation() {
+ofQuaternion& ofxFBXBone::getOriginalLocalRotation() {
     return origLocalRotation;
-}
-
-//--------------------------------------------------------------
-ofVec3f ofxFBXBone::getOriginalLocalPosition() {
-    return origLocalPosition;
 }
 
 //--------------------------------------------------------------

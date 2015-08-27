@@ -46,8 +46,7 @@ public:
     
     void updateFbxTransform();
     void updateFbxTransformLocal();
-    ofQuaternion getOriginalLocalRotation();
-    ofVec3f getOriginalLocalPosition();
+    ofQuaternion& getOriginalLocalRotation();
     
     int getNumBones();
     map< string, ofxFBXBone* > getAllBones();
@@ -61,15 +60,14 @@ public:
     
     string parentBoneName;
     
-    int level;
+//    int level;
     
     map< string, ofxFBXBone > bones;
     map< string, ofxFBXBone* > sourceBones;
     
     ofxFBXBone* sourceBone;
-    ofQuaternion origLocalRotation;
-    ofQuaternion origGlobalRotation;
-    ofVec3f origLocalPosition;
+    
+    ofQuaternion origLocalRotation, origGlobalRotation;
     ofMatrix4x4 origGlobalTransform;
     ofMatrix4x4 origLocalTransform;
     
