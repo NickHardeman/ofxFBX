@@ -37,6 +37,9 @@ public:
     bool isPaused();
     bool isDone();
     
+    void setLoops( bool aB );
+    bool getLoops();
+    
     float getPosition();
     float getPositionSeconds();
     unsigned int getPositionMillis();

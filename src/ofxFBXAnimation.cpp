@@ -49,7 +49,7 @@ void ofxFBXAnimation::update() {
 //    cout << "speed: " << _speed << endl;
     float tspeed            = _speed;
     if( tspeed < 0 ) tspeed *= -1.f;
-    float clampFrameTime    = ofClamp( getFramerate() * tspeed, 0.0001, 600);
+    float clampFrameTime    = getFramerate() * tspeed;//ofClamp( getFramerate() * tspeed, 0.0001, 600);
     float tframeTime        = (1.f / clampFrameTime) * 1000.f;
     
     if(bPlaying) {
@@ -64,22 +64,22 @@ void ofxFBXAnimation::update() {
         }
     }
     
-    if(bLoop) {
         
-        if( _speed >= 0 ) {
-            if(fbxCurrentTime > fbxStopTime ) {
-                bDone = true;
-                fbxCurrentTime = fbxStartTime;
-            } else {
-                bDone = false;
-            }
+    if( _speed >= 0 ) {
+        if(fbxCurrentTime > fbxStopTime ) {
+            bDone = true;
+            if(bLoop) fbxCurrentTime = fbxStartTime;
+            else fbxCurrentTime = fbxStopTime;
         } else {
-            if(fbxCurrentTime < fbxStartTime ) {
-                bDone = true;
-                fbxCurrentTime = fbxStopTime;
-            } else {
-                bDone = false;
-            }
+            bDone = false;
+        }
+    } else {
+        if(fbxCurrentTime < fbxStartTime ) {
+            bDone = true;
+            if(bLoop) fbxCurrentTime = fbxStopTime;
+            else fbxCurrentTime = fbxStartTime;
+        } else {
+            bDone = false;
         }
     }
 }
@@ -102,6 +102,14 @@ float ofxFBXAnimation::getSpeed() {
 //--------------------------------------------------------------
 void ofxFBXAnimation::play() {
     bPlaying = true;
+    if( bDone && !bLoop ) {
+        if( _speed >= 0 ) {
+            fbxCurrentTime = fbxStartTime;
+        } else {
+            fbxCurrentTime = fbxStopTime;
+        }
+    }
+    bDone = false;
 }
 
 //--------------------------------------------------------------
@@ -132,6 +140,16 @@ bool ofxFBXAnimation::isPaused() {
 //--------------------------------------------------------------
 bool ofxFBXAnimation::isDone() {
     return bDone;
+}
+
+//--------------------------------------------------------------
+void ofxFBXAnimation::setLoops( bool aB ) {
+    bLoop = aB;
+}
+
+//--------------------------------------------------------------
+bool ofxFBXAnimation::getLoops() {
+    return bLoop;
 }
 
 //--------------------------------------------------------------
