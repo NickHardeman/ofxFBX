@@ -82,6 +82,8 @@ void ofxFBXManager::update() {
         fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
 #elif defined(OFX_FBX_SDK_2015)
         fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
+#else 
+        fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
 #endif
     }
     
@@ -276,6 +278,9 @@ void ofxFBXManager::setAnimation( int aIndex ) {
 #if defined(OFX_FBX_SDK_2013)
     fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
 #elif defined(OFX_FBX_SDK_2015)
+    fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
+#else 
+    // default to this //
     fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
 #endif
     
