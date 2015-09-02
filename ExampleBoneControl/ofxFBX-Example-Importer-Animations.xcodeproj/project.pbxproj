@@ -18,6 +18,7 @@
 		2E9F35271AB0A3A600107F09 /* ofxFBXPose.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F35171AB0A3A600107F09 /* ofxFBXPose.cpp */; };
 		2E9F35281AB0A3A600107F09 /* ofxFBXScene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F35191AB0A3A600107F09 /* ofxFBXScene.cpp */; };
 		2E9F35291AB0A3A600107F09 /* ofxFBXSkeleton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2E9F351B1AB0A3A600107F09 /* ofxFBXSkeleton.cpp */; };
+		2EAFB6A21B9762750018A516 /* libiconv.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2EAFB6A01B97626A0018A516 /* libiconv.dylib */; };
 		BBAB23CB13894F3D00AA2426 /* GLUT.framework in CopyFiles */ = {isa = PBXBuildFile; fileRef = BBAB23BE13894E4700AA2426 /* GLUT.framework */; };
 		E4328149138ABC9F0047C5CB /* openFrameworksDebug.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E4328148138ABC890047C5CB /* openFrameworksDebug.a */; };
 		E45BE97B0E8CC7DD009D7055 /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E45BE9710E8CC7DD009D7055 /* AGL.framework */; };
@@ -95,6 +96,7 @@
 		2E9F351B1AB0A3A600107F09 /* ofxFBXSkeleton.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ofxFBXSkeleton.cpp; sourceTree = "<group>"; };
 		2E9F351C1AB0A3A600107F09 /* ofxFBXSkeleton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFBXSkeleton.h; sourceTree = "<group>"; };
 		2E9F351D1AB0A3A600107F09 /* ofxFBXUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ofxFBXUtils.h; sourceTree = "<group>"; };
+		2EAFB6A01B97626A0018A516 /* libiconv.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libiconv.dylib; path = usr/lib/libiconv.dylib; sourceTree = SDKROOT; };
 		BBAB23BE13894E4700AA2426 /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = ../../../libs/glut/lib/osx/GLUT.framework; sourceTree = "<group>"; };
 		E4328143138ABC890047C5CB /* openFrameworksLib.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = openFrameworksLib.xcodeproj; path = ../../../libs/openFrameworksCompiled/project/osx/openFrameworksLib.xcodeproj; sourceTree = SOURCE_ROOT; };
 		E45BE9710E8CC7DD009D7055 /* AGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AGL.framework; path = /System/Library/Frameworks/AGL.framework; sourceTree = "<absolute>"; };
@@ -126,6 +128,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EAFB6A21B9762750018A516 /* libiconv.dylib in Frameworks */,
 				E7F985F815E0DEA3003869B5 /* Accelerate.framework in Frameworks */,
 				E7E077E815D3B6510020DFD4 /* QTKit.framework in Frameworks */,
 				E4EB6799138ADC1D00A09F29 /* GLUT.framework in Frameworks */,
@@ -200,6 +203,7 @@
 		BBAB23C913894ECA00AA2426 /* system frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2EAFB6A01B97626A0018A516 /* libiconv.dylib */,
 				E7F985F515E0DE99003869B5 /* Accelerate.framework */,
 				E4C2424410CC5A17004149E2 /* AppKit.framework */,
 				E4C2424510CC5A17004149E2 /* Cocoa.framework */,
@@ -414,6 +418,7 @@
 					"$(OF_CORE_HEADERS)",
 					src,
 				);
+				LIBRARY_SEARCH_PATHS = "$(ADDON_LIBS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CPLUSPLUSFLAGS = (
 					"-D__MACOSX_CORE__",
@@ -449,6 +454,7 @@
 					"$(OF_CORE_HEADERS)",
 					src,
 				);
+				LIBRARY_SEARCH_PATHS = "$(ADDON_LIBS)";
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
 				OTHER_CPLUSPLUSFLAGS = (
 					"-D__MACOSX_CORE__",
@@ -477,12 +483,7 @@
 				ICON_FILE = "$(ICON_FILE_PATH)$(ICON)";
 				INFOPLIST_FILE = "openFrameworks-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SYSTEM_APPS_DIR)/OpenFrameworks/openFrameworks-0.8.0/addons/ofxFBX/libs/fbxsdk/lib/linux",
-					"$(SYSTEM_APPS_DIR)/OpenFrameworks/openFrameworks-0.8.0/addons/ofxFBX/libs/fbxsdk/lib/linux64",
-					"$(SYSTEM_APPS_DIR)/OpenFrameworks/openFrameworks-0.8.0/addons/ofxFBX/libs/fbxsdk_2013/lib/osx",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "ofxFBX-Example-Importer-AnimationsDebug";
 				WRAPPER_EXTENSION = app;
 			};
@@ -505,12 +506,7 @@
 				ICON_FILE = "$(ICON_FILE_PATH)$(ICON)";
 				INFOPLIST_FILE = "openFrameworks-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SYSTEM_APPS_DIR)/OpenFrameworks/openFrameworks-0.8.0/addons/ofxFBX/libs/fbxsdk/lib/linux",
-					"$(SYSTEM_APPS_DIR)/OpenFrameworks/openFrameworks-0.8.0/addons/ofxFBX/libs/fbxsdk/lib/linux64",
-					"$(SYSTEM_APPS_DIR)/OpenFrameworks/openFrameworks-0.8.0/addons/ofxFBX/libs/fbxsdk_2013/lib/osx",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				PRODUCT_NAME = "ofxFBX-Example-Importer-Animations";
 				WRAPPER_EXTENSION = app;
 			};

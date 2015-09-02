@@ -10,8 +10,11 @@ ICON_NAME_DEBUG = icon-debug.icns
 ICON_NAME_RELEASE = icon.icns
 ICON_FILE_PATH = $(OF_PATH)/libs/openFrameworksCompiled/project/osx/
 
-OFX_FBX_INCLUDE = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2013/include/**"
-OFX_FBX_LIBS    = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2013/lib/osx/fbxsdk.a"
+//OFX_FBX_INCLUDE = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2013/include/**"
+//OFX_FBX_LIBS    = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2013/lib/osx/fbxsdk.a"
+
+OFX_FBX_INCLUDE = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2015.1/include/**"
+OFX_FBX_LIBS    = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2015.1/lib/osx/libstdcpp/release/libfbxsdk.a"
 
 ADDON_HEADERS   = $(OFX_FBX_INCLUDE)
 ADDON_LIBS      = $(OFX_FBX_LIBS)
