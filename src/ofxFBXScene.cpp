@@ -111,7 +111,13 @@ bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
     }
     
     if(animations.size() > 0) {
-        FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
+        
+		
+		FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
+
+		//FbxCritera searchCriteria = FbxCriteria::ObjectType( FbxAnimStack::FbxAnimStack )
+		//FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
+
         if (lCurrentAnimationStack == NULL) {
             cout << "this is a problem. The anim stack should be found in the scene!" << endl;
             // this is a problem. The anim stack should be found in the scene!
@@ -226,8 +232,9 @@ void ofxFBXScene::cacheTexturesInScene( FbxScene* pScene ) {
                     ofLogVerbose("Loaded the texture from ") << filepath << endl;
                     
                     texture->getTextureData().bFlipTexture = true;
-                    texture->getTextureData().useTextureMatrix = false;
-                    
+//                    texture->getTextureData().useTextureMatrix = false; // TEMP, useTextureMatrix is private now, TODO: a workaround
+
+
                     lFileTexture->SetUserDataPtr( texture );
                 } else {
                     ofLogWarning("Failed to load texture for ") << lFileName;

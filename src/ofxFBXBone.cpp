@@ -26,6 +26,11 @@ bool ofxFBXBone::doesExist() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXBone::reset() 
+{
+}
+
+//--------------------------------------------------------------
 void ofxFBXBone::setup( FbxNode* pNode ) {
     ofxFBXNode::setup( pNode );
     fbxNode = pNode;

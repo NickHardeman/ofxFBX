@@ -8,14 +8,15 @@
 
 #pragma once
 
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-    #include <fbxsdk.h>
-#endif
+#include <fbxsdk.h>
 
-#include "ofMain.h"
-#if defined(TARGET_OSX)
-    #include "fbxsdk.h"
+/*
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+#else
+	#include "fbxsdk.h"
 #endif
+*/
 
 #include "ofxFBXUtils.h"
 

@@ -9,6 +9,17 @@
 #pragma once
 #include "ofxFBX.h"
 
+#include <fbxsdk.h>
+
+/*
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+#else
+	#include "fbxsdk.h"
+#endif
+*/
+
+
 class ofxFBXManager : public ofNode {
 public:
     ofxFBXManager();
@@ -50,7 +61,7 @@ public:
     void disablePoses();
     void togglePosesEnabled();
     int getNumPoses();
-    int setPoseIndex( int aIndex );
+    void setPoseIndex( int aIndex );
     shared_ptr< ofxFBXPose > getCurrentPose();
     vector< shared_ptr< ofxFBXPose > > getPoses();
     

@@ -9,19 +9,35 @@
 
 #pragma once
 
-
 #define FBXSDK_NEW_API
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-// Linux libs from Arturo Castro's ofxFBX -------
-// -- https://github.com/arturoc/ofxFBX --
-    #include <fbxsdk.h>
-#endif
 
 #include "ofMain.h"
+
+/*
 #if defined(TARGET_OSX)
     #include "fbxsdk.h"
-#include "fbxscene.h"
 #endif
+
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+	#include <fbxscene.h>
+#else
+	#include "fbxsdk.h"
+	#include "fbxsdk/scene/fbxscene.h"
+#endif
+	*/
+
+#include <fbxsdk.h>
+
+/*
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+#else
+	#include "fbxsdk.h"
+#endif
+*/
+
+//#include <fbxsdk/scene/fbxscene.h>
 
 #include "ofxFBXUtils.h"
 #include "ofxFBXAnimation.h"

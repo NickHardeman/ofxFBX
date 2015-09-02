@@ -7,14 +7,19 @@
 //
 
 #pragma once
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-    #include <fbxsdk.h>
-#endif
 
 #include "ofMain.h"
-    #if defined(TARGET_OSX)
-#include "fbxsdk.h"
+#include <math.h> 
+
+#include <fbxsdk.h>
+
+/*
+#if defined(TARGET_LINUX) 
+    #include <fbxsdk.h>
+#else
+	#include "fbxsdk.h"
 #endif
+*/
 
 class ofxFBXAnimation {
 public:

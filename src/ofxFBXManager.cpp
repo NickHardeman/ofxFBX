@@ -214,7 +214,10 @@ void ofxFBXManager::setAnimation( int aIndex ) {
         return;
     }
     currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
-    fbxScene->getFBXScene()->GetEvaluator()->SetContext( lCurrentAnimationStack );
+
+    //fbxScene->getFBXScene()->GetEvaluator()->SetContext( lCurrentAnimationStack );
+    fbxScene->getFBXScene()->SetCurrentAnimationStack( lCurrentAnimationStack );
+
     animationIndex = aIndex;
 }
 
@@ -349,7 +352,7 @@ int ofxFBXManager::getNumPoses() {
 }
 
 //--------------------------------------------------------------
-int ofxFBXManager::setPoseIndex( int aIndex ) {
+void ofxFBXManager::setPoseIndex( int aIndex ) {
     aIndex = ofClamp( aIndex, 0, getNumPoses()-1 );
     poseIndex = aIndex;
 }
