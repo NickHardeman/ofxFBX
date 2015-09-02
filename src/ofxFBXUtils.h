@@ -8,14 +8,15 @@
 
 #pragma once
 #define FBXSDK_NEW_API
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-    #include <fbxsdk.h>
-#endif
-
-#if defined(TARGET_OSX)
-    #include "fbxsdk.h"
-#endif
+//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
+//    #include <fbxsdk.h>
+//#endif
+//
+//#if defined(TARGET_OSX)
+//    #include "fbxsdk.h"
+//#endif
 #include "ofMain.h"
+#include <fbxsdk.h>
 #include "GetPosition.h"
 
 // --- from Arturo Castro's ofxFBX -------

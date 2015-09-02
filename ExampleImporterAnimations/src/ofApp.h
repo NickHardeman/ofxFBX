@@ -3,7 +3,7 @@
 #include "ofMain.h"
 #include "ofxFBX.h"
 
-class testApp : public ofBaseApp {
+class ofApp : public ofBaseApp {
 public:
     
     void setup();

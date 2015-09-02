@@ -9,14 +9,17 @@
 #pragma once
 
 #define FBXSDK_NEW_API
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-    #include <fbxsdk.h>
-#endif
+//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
+//    #include <fbxsdk.h>
+//#endif
+//
+//#include "ofMain.h"
+//#if defined(TARGET_OSX)
+//    #include "fbxsdk.h"
+//#endif
 
 #include "ofMain.h"
-#if defined(TARGET_OSX)
-    #include "fbxsdk.h"
-#endif
+#include <fbxsdk.h>
 
 #include "ofVboMesh.h"
 #include "ofxFBXNode.h"

@@ -8,14 +8,16 @@
 
 #pragma once
 
-#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-    #include <fbxsdk.h>
-#endif
+//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
+//    #include <fbxsdk.h>
+//#endif
 
 #include "ofMain.h"
-#if defined(TARGET_OSX)
-    #include "fbxsdk.h"
-#endif
+#include <fbxsdk.h>
+
+//#if defined(TARGET_OSX)
+//    #include "fbxsdk.h"
+//#endif
 
 class ofxFBXMeshMaterial : public ofMaterial {
 public:
