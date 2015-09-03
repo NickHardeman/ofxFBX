@@ -247,7 +247,7 @@ ofxFBXAnimation& ofxFBXManager::getAnimation( int aIndex ) {
 
 //--------------------------------------------------------------
 ofxFBXAnimation& ofxFBXManager::getAnimation( string aname ) {
-    getAnimation( getAnimationIndex( aname ) );
+    return getAnimation( getAnimationIndex( aname ) );
 }
 
 //--------------------------------------------------------------
@@ -414,7 +414,7 @@ int ofxFBXManager::getNumPoses() {
 }
 
 //--------------------------------------------------------------
-int ofxFBXManager::setPoseIndex( int aIndex ) {
+void ofxFBXManager::setPoseIndex( int aIndex ) {
     aIndex = ofClamp( aIndex, 0, getNumPoses()-1 );
     poseIndex = aIndex;
 }
