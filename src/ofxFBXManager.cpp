@@ -78,13 +78,7 @@ void ofxFBXManager::update() {
     animations[animationIndex].update();
     
     if( currentAnimationStack != NULL ) {
-#if defined(OFX_FBX_SDK_2013)
-        fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
-#elif defined(OFX_FBX_SDK_2015)
         fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
-#else 
-        fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
-#endif
     }
     
 //    cout << "ofxFBXManager :: update : animations | " << ofGetElapsedTimef() << endl;
@@ -275,14 +269,7 @@ void ofxFBXManager::setAnimation( int aIndex ) {
 //    int numAnimLayers = lCurrentAnimationStack->GetMemberCount<FbxAnimLayer>();
 //    cout << "Number of animation layers= " << numAnimLayers << endl;
     currentFbxAnimationLayer = currentAnimationStack->GetMember<FbxAnimLayer>();
-#if defined(OFX_FBX_SDK_2013)
-    fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
-#elif defined(OFX_FBX_SDK_2015)
     fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
-#else 
-    // default to 2013 compatability //
-    fbxScene->getFBXScene()->GetEvaluator()->SetContext( currentAnimationStack );
-#endif
     
     animationIndex = aIndex;
 }

@@ -10,19 +10,14 @@ ICON_NAME_DEBUG = icon-debug.icns
 ICON_NAME_RELEASE = icon.icns
 ICON_FILE_PATH = $(OF_PATH)/libs/openFrameworksCompiled/project/osx/
 
-//OFX_FBX_INCLUDE = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2013/include/**"
-//OFX_FBX_LIBS    = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2013/lib/osx/fbxsdk.a"
-
-OFX_FBX_INCLUDE = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2015.1/include/**"
-OFX_FBX_LIBS    = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2015.1/lib/osx/libstdcpp/release/libfbxsdk.a"
+OFX_FBX_INCLUDE = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2016.1/include/**"
+OFX_FBX_LIBS    = "$(OF_PATH)/addons/ofxFBX/libs/fbxsdk_2016.1/lib/osx/libfbxsdk.a"
 
 ADDON_HEADERS   = $(OFX_FBX_INCLUDE)
 ADDON_LIBS      = $(OFX_FBX_LIBS)
-
-GCC_PREPROCESSOR_DEFINITIONS=OFX_FBX_SDK_2015=1
 
 //IF YOU WANT AN APP TO HAVE A CUSTOM ICON - PUT THEM IN YOUR DATA FOLDER AND CHANGE ICON_FILE_PATH to:
 //ICON_FILE_PATH = bin/data/
 
 OTHER_LDFLAGS = $(OF_CORE_LIBS) $(ADDON_LIBS)
-HEADER_SEARCH_PATHS = $(OF_CORE_HEADERS) 
+HEADER_SEARCH_PATHS = $(OF_CORE_HEADERS) $(ADDON_HEADERS)

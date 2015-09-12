@@ -218,7 +218,7 @@ void ofxFBXScene::cacheTexturesInScene( FbxScene* pScene ) {
                     ofLogVerbose("Loaded the texture from ") << filepath << endl;
                     
                     texture->getTextureData().bFlipTexture = true;
-                    texture->getTextureData().useTextureMatrix = false;
+                    texture->disableTextureMatrix();
                     
                     lFileTexture->SetUserDataPtr( texture );
                 } else {
@@ -246,7 +246,7 @@ void ofxFBXScene::deleteCachedTexturesInScene( FbxScene* pScene ) {
 }
 
 bool ofxFBXScene::isValidTexturePath( string aPathToTexture ) {
-    ofFile tfile = (string)aPathToTexture;
+    ofFile tfile( (string)aPathToTexture );
     if(!tfile.exists()) return false;
     bool bGoodToGo = false;
     if(tfile.getExtension() == "tga") bGoodToGo = true;

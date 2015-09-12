@@ -113,7 +113,7 @@ void ofxFBXBone::draw( float aLen, bool aBDrawAxes ) {
     if( getParent() != NULL && !bIsRoot ) {
         //ofSetColor(255, 0, 130 );
         ofVec3f ppos = getParent()->getGlobalPosition();
-        ofLine( ppos, getGlobalPosition() );
+        ofDrawLine( ppos, getGlobalPosition() );
     }
     
     map< string, ofxFBXBone >::iterator it;

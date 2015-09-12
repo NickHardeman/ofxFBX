@@ -494,7 +494,7 @@ void ofxFBXMesh::drawNormals( ofMesh* aMesh, float length, bool bFaceNormals ) {
         } else {
             for(int i = 0; i < (int)normals.size(); i++) {
                 vert = vertices[i];
-                normal = normals[i].normalized();
+                normal = normals[i].getNormalized();
                 normalsMesh.setVertex( i*2, vert);
                 normal *= length;
                 normalsMesh.setVertex(i*2+1, normal+vert);
