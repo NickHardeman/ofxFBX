@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="src\ofApp.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\GetPosition.cxx">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXAnimation.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXBone.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXCluster.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXManager.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXMesh.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXMeshMaterial.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXNode.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXPose.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXScene.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ofxFBXSkeleton.cpp">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{d8376475-7454-4a24-b08a-aac121d3ad6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons">
+      <UniqueIdentifier>{9c6f0c0d-721f-4879-ad13-89f79f54affd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\ofxFBX">
+      <UniqueIdentifier>{eb6dccf5-534b-4a03-90e2-ac305527bf26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="addons\ofxFBX\src">
+      <UniqueIdentifier>{dbad52a8-8713-4a96-80ff-857c476321d7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ofApp.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\GetPosition.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBX.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXAnimation.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXBone.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXCluster.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXManager.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXMesh.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXMeshMaterial.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXNode.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXPose.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXScene.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXSkeleton.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ofxFBXUtils.h">
+      <Filter>addons\ofxFBX\src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="icon.rc" />
+  </ItemGroup>
+</Project>
