@@ -64,6 +64,7 @@ void ofxFBXSkeleton::draw( float aLen, bool aBDrawAxes ) {
 
 //--------------------------------------------------------------
 ofxFBXBone* ofxFBXSkeleton::getBone( string aName ) {
+    if( root.getName() == aName ) return &root;
     return root.getBone( aName );
 }
 
