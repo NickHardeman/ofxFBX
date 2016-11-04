@@ -4,9 +4,7 @@
 
 ![FBX version 7.4](ReadMeImages/fbxout.gif)
 
-Currently only supporting OSX. Tested with OF v0.08 and OSX 10.8-10.10.
-
-### WIP. Currently adding features to this addon.
+Currently supporting OSX and Windows Visual Studio. Tested with OF v0.9 - v0.94.
 
 Features include:
 * Multiple Animations with individual control
