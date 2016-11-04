@@ -53,14 +53,15 @@ void ofxFBXAnimation::update() {
     float tframeTime        = (1.f / clampFrameTime) * 1000.f;
     
     if(bPlaying) {
-        if(ofGetElapsedTimeMillis() - lastUpdateTimeMillis >= tframeTime ) {
+        uint64_t etimeMillis = ofGetElapsedTimeMillis();
+        if( etimeMillis - lastUpdateTimeMillis >= tframeTime ) {
             bNewFrame = true;
             if( _speed >= 0 ) {
                 fbxCurrentTime += (fbxFrameTime);
             } else {
                 fbxCurrentTime -= (fbxFrameTime);
             }
-            lastUpdateTimeMillis = ofGetElapsedTimeMillis();
+            lastUpdateTimeMillis = etimeMillis;
         }
     }
     
@@ -191,12 +192,14 @@ float ofxFBXAnimation::getFramerate() {
 void ofxFBXAnimation::setPosition( float aPct ) {
     int ttime = ofMap(aPct, 0.f, 1.f, startTimeMillis, stopTimeMillis, true );
     fbxCurrentTime.SetMilliSeconds(ttime);
+    lastUpdateTimeMillis = -1; // force update of new frame //
 }
 
 //--------------------------------------------------------------
 void ofxFBXAnimation::setFrame( int aFrameNum ) {
     float tframe = ofClamp( aFrameNum, 0, getTotalNumFrames() );
     fbxCurrentTime = fbxStartTime + fbxFrameTime * tframe;
+    lastUpdateTimeMillis = -1; // force update of new frame //
 }
 
 //--------------------------------------------------------------
