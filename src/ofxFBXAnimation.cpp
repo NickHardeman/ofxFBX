@@ -103,7 +103,7 @@ float ofxFBXAnimation::getSpeed() {
 void ofxFBXAnimation::play() {
     bPlaying = true;
     if( bDone && !bLoop ) {
-        if( _speed >= 0 ) {
+        if( _speed > 0 ) {
             fbxCurrentTime = fbxStartTime;
         } else {
             fbxCurrentTime = fbxStopTime;

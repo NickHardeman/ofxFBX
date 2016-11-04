@@ -319,6 +319,15 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
         }
     }
     
+    // associate the materials with the sub meshes //
+    int lSubMeshCount = subMeshes.size();
+    for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex) {
+        const FbxSurfaceMaterial * lMaterial = fbxMesh->GetNode()->GetMaterial(lIndex);
+        if(lMaterial) {
+            subMeshes[ lIndex ].materialPtr = static_cast<ofxFBXMeshMaterial *>(lMaterial->GetUserDataPtr());
+        }
+    }
+    
 }
 
 //--------------------------------------------------------------
@@ -526,6 +535,22 @@ bool ofxFBXMesh::hasClusterDeformation() {
         return false;
     }
     return fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
+}
+
+//--------------------------------------------------------------
+vector< ofxFBXMeshMaterial* > ofxFBXMesh::getMaterials() {
+    vector< ofxFBXMeshMaterial* > rMaterials;
+    int lSubMeshCount = subMeshes.size();
+    for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex) {
+        const FbxSurfaceMaterial * lMaterial = fbxMesh->GetNode()->GetMaterial(lIndex);
+        ofxFBXMeshMaterial* lMaterialCache = NULL;
+        if(lMaterial) {
+            lMaterialCache = static_cast<ofxFBXMeshMaterial *>(lMaterial->GetUserDataPtr());
+            rMaterials.push_back( lMaterialCache );
+        }
+        
+    }
+    return rMaterials;
 }
 
 //--------------------------------------------------------------

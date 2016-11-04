@@ -25,6 +25,7 @@
 #include "ofxFBXNode.h"
 #include "ofxFBXBone.h"
 #include "ofxFBXCluster.h"
+#include "ofxFBXMeshMaterial.h"
 
 class ofxFBXSubMesh {
 public:
@@ -33,12 +34,14 @@ public:
         triangleCount   = 0;
         indexOffset     = 0;
         totalIndices    = 0;
+        materialPtr     = NULL;
     }
     
     ~ofxFBXSubMesh() {
         
     }
     
+    ofxFBXMeshMaterial* materialPtr;
     bool bRender;
     int triangleCount;
     int indexOffset;
@@ -59,9 +62,12 @@ public:
 	void draw( ofMesh* aMesh );
     void drawNormals( ofMesh* aMesh, float length, bool bFaceNormals);
     
-    FbxMesh* getFbxMesh() { return fbxMesh;}
+    FbxMesh* getFbxMesh() { return fbxMesh; }
     int getNumSubMeshes();
     int getNumMaterials();
+    
+    const vector<ofxFBXSubMesh>& getSubMeshes() const { return subMeshes; }
+    vector< ofxFBXMeshMaterial* > getMaterials();
     
     bool hasClusterDeformation();
     
