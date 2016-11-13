@@ -4,7 +4,7 @@
 
 ![FBX version 7.4](ReadMeImages/fbxout.gif)
 
-Currently supporting OSX and Windows Visual Studio. Tested with OF v0.9 - v0.94.
+Currently supporting OSX and Windows Visual Studio. Tested with OF v0.9 - v0.97.
 
 Features include:
 * Multiple Animations with individual control
