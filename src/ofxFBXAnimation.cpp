@@ -104,7 +104,7 @@ float ofxFBXAnimation::getSpeed() {
 void ofxFBXAnimation::play() {
     bPlaying = true;
     if( bDone && !bLoop ) {
-        if( _speed > 0 ) {
+        if( _speed >= 0 ) {
             fbxCurrentTime = fbxStartTime;
         } else {
             fbxCurrentTime = fbxStopTime;
@@ -197,8 +197,8 @@ void ofxFBXAnimation::setPosition( float aPct ) {
 
 //--------------------------------------------------------------
 void ofxFBXAnimation::setFrame( int aFrameNum ) {
-    float tframe = ofClamp( aFrameNum, 0, getTotalNumFrames() );
-    fbxCurrentTime = fbxStartTime + fbxFrameTime * tframe;
+    float tframe    = ofClamp( aFrameNum, 0, getTotalNumFrames() );
+    fbxCurrentTime  = fbxStartTime + fbxFrameTime * tframe;
     lastUpdateTimeMillis = -1; // force update of new frame //
 }
 
