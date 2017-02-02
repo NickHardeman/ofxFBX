@@ -12,10 +12,14 @@
 */build/*
 .DS_Store
 
+
 # User-specific files
 *.suo
 *.user
 *.sln.docstates
+*.sdf
+*.db
+*.opendb
 
 AutoDesk-Viewer/*
 */fbxsdk_2015.1/*
