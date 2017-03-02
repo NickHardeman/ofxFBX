@@ -16,7 +16,9 @@ ofxFBXNode::ofxFBXNode() {
 
 //----------------------------------------
 ofxFBXNode::~ofxFBXNode() {
-    
+    if( getParent() != NULL ) {
+        clearParent();
+    }
 }
 
 //----------------------------------------
