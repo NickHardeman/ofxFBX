@@ -38,6 +38,14 @@ void ofxFBXSkeleton::reconstructNodeParenting() {
     // we need a way to get all of the bones as pointers, so we can easily make the association //
     map< string, ofxFBXBone* > tempBones = root.getAllBones();
     map< string, ofxFBXBone* >::iterator it;
+    
+    // clear the parents to remove the previous listeners //
+    for( it = tempBones.begin(); it != tempBones.end(); ++it ) {
+        if( it->second->getParent() != NULL ) {
+            it->second->clearParent();
+        }
+    }
+    
     for( it = tempBones.begin(); it != tempBones.end(); ++it ) {
         if( it->second->hasSkeletonParent() ) {
             if( tempBones.count(it->second->parentBoneName) ) {
