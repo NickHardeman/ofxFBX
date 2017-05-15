@@ -19,6 +19,11 @@
 //    #include "fbxsdk.h"
 //#endif
 
+class ofxFBXTexture : public ofTexture {
+public:
+	string filePath;
+};
+
 class ofxFBXMeshMaterial : public ofMaterial {
 public:
     ofxFBXMeshMaterial();
@@ -30,7 +35,7 @@ public:
     void end();
     
     bool hasTexture();
-    ofTexture* getTexturePtr();
+	ofxFBXTexture* getTexturePtr();
     void enableTextures();
     void disableTextures();
     bool areTexturesEnabled();
@@ -61,7 +66,8 @@ protected:
     bool _bMaterialsEnabled;
     bool _bEnabled;
     string _name;
-    ofTexture* texture;
+    string _textureName="";
+	ofxFBXTexture* texture;
     
 };
 

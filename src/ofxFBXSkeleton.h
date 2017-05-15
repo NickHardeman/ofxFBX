@@ -27,7 +27,10 @@ public:
     
     void setup( FbxNode *pNode );
     void reconstructNodeParenting();
+    // get global transform update //
     void update( FbxTime& pTime, FbxPose* pPose );
+    // keyframes update //
+    void update( int aAnimIndex, signed long aMillis );
     void lateUpdate();
     
     void draw( float aLen = 6.f, bool aBDrawAxes = true );
@@ -42,6 +45,8 @@ public:
     
     int getNumBones();
     string toString();
+    
+    map< string, ofxFBXBone* > getAllBones();
     
     ofxFBXBone root;
     ofxFBXBone* rootSource;

@@ -28,10 +28,12 @@ public:
     bool doesExist();
     
     void setAsRoot();
+    bool isRoot() { return bIsRoot; }
     void setup( FbxNode* pNode );
     void setupFromSourceBones();
-    void cacheStartTransforms();
+    
     void update( FbxTime& pTime, FbxPose* pPose );
+    virtual void update( int aAnimIndex, signed long aMillis );
     void lateUpdate();
     void draw( float aLen = 6.f, bool aBDrawAxes = true);
     
@@ -67,10 +69,6 @@ public:
     map< string, ofxFBXBone* > sourceBones;
     
     ofxFBXBone* sourceBone;
-    
-    ofQuaternion origLocalRotation, origGlobalRotation;
-    ofMatrix4x4 origGlobalTransform;
-    ofMatrix4x4 origLocalTransform;
     
 protected:
     void findBoneRecursive( string aName, ofxFBXBone*& returnBone );

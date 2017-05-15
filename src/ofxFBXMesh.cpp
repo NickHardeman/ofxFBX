@@ -12,7 +12,6 @@
 //--------------------------------------------------------------
 ofxFBXMesh::ofxFBXMesh() {
     fbxMesh = NULL;
-    bAllMappedByControlPoint    = true;
     mNormalsArray = NULL;
 }
 
@@ -27,27 +26,12 @@ ofxFBXMesh::~ofxFBXMesh() {
 //--------------------------------------------------------------
 void ofxFBXMesh::setup( FbxNode *pNode ) {
     ofxFBXNode::setup( pNode );
-    // Bake material and hook as user data.
-//    const int lMaterialCount = pNode->GetMaterialCount();
-//    subMeshes.resize( lMaterialCount );
-//    for (int lMaterialIndex = 0; lMaterialIndex < lMaterialCount; ++lMaterialIndex) {
-//        FbxSurfaceMaterial * pMaterial = pNode->GetMaterial(lMaterialIndex);
-//        
-//        GetElementMaterial
-//        
-//        ofMaterial& mat = meshMaterials[lMaterialIndex].material;
-//        meshMaterials[lMaterialIndex].setup( pMaterial );
-//    }
-//    
-//    cout << "ofxFBXMesh :: setup : number of materials = " << lMaterialCount << " for " << getName() << endl;
-    
     setFBXMesh( pNode->GetMesh() );
 }
 
 //--------------------------------------------------------------
 void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
 	fbxMesh = lMesh;
-//	name = lMesh->GetName();
 	mesh.clear();
     
     // from ViewScene Example included with the FBX SDK //
@@ -56,9 +40,9 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
         return;
     }
     
+    vector< string > eMappingModeNames = {"eNone", "eByControlPoint", "eByPolygonVertex", "eByPolygon", "eByEdge", "eAllSame"};
     
     const int lPolygonCount = lMesh->GetPolygonCount();
-    
     
     // Count the polygon count of each material
     FbxLayerElementArrayTemplate<int>* lMaterialIndice = NULL;
@@ -74,245 +58,315 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
                 for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
                     const int lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
                     if(lMaterialIndex >= 0) {
-                        if (subMeshes.size() < lMaterialIndex + 1) {
+                        if(subMeshes.size() < lMaterialIndex + 1) {
                             subMeshes.resize(lMaterialIndex + 1);
                         }
                     }
                 }
-                
-                // Count the faces of each material
-                for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
-                    const int lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
-//                    cout << "lMaterialIndex = " << lMaterialIndex << " submesh.size = " << subMeshes.size() << endl;
-                    if(lMaterialIndex >= 0 ) {
-                        subMeshes[lMaterialIndex].triangleCount += 1;
-                    }
-                }
-                
-                // Record the offset (how many vertex)
-                const int lMaterialCount = subMeshes.size();
-                int lOffset = 0;
-                for (int lIndex = 0; lIndex < lMaterialCount; ++lIndex) {
-                    subMeshes[lIndex].indexOffset = lOffset;
-                    lOffset += subMeshes[lIndex].triangleCount * 3;
-//                    subMeshes[lIndex].totalIndices = subMeshes[lIndex].triangleCount * 3;
-//                    cout << "polygon: " << lIndex << " totalIndices = " << subMeshes[lIndex].totalIndices << endl;
-                    // This will be used as counter in the following procedures, reset to zero
-                    subMeshes[lIndex].triangleCount = 0;
-                }
-                FBX_ASSERT(lOffset == lPolygonCount * 3); // what?
             }
         }
+    }
+    
+    // split the vertices based on the materials //
+    // so that it renders properly //
+    if( subMeshes.size() > 1 ) {
+        fbxMesh->SplitPoints();
     }
     
     if(subMeshes.size() == 0) {
         subMeshes.resize(1);
     }
     
+    // add in the vertices //
+    const FbxVector4 * lControlPoints = lMesh->GetControlPoints();
+    int controlPointCount = lMesh->GetControlPointsCount();
+    mesh.getVertices().resize( controlPointCount );
+    
+    ofLogVerbose() << "ofxFBXMesh :: number of vertices: " << mesh.getNumVertices();
+    
+    // INDICES /////
+    mesh.clearIndices();
+    // populate the indices //
+    for( int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; lPolygonIndex++ ) {
+        int faceSize = fbxMesh->GetPolygonSize( lPolygonIndex );
+        for( int lVerticeIndex = 0; lVerticeIndex < faceSize; lVerticeIndex++ ) {
+            const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
+            mesh.getVertices()[ lControlPointIndex ].set(lControlPoints[lControlPointIndex][0],
+                                                         lControlPoints[lControlPointIndex][1],
+                                                         lControlPoints[lControlPointIndex][2] );
+            mesh.addIndex( lControlPointIndex );
+        }
+    }
+    
+    ofLogVerbose() << "ofxFBXMesh :: number of indices: " << mesh.getNumIndices() << " number of polygons: " << lPolygonCount << endl;
+    
+    
     // TODO: Account for if all mapping modes are not by control point //
     
-    bool bHasNormals = lMesh->GetElementNormalCount() > 0;
-    bool bMapNormalsByControlPoint = true;
-    bool bHasUvs = lMesh->GetElementUVCount() > 0;
-    bool bMapUvsByControlPoint = true;
-    
-    // are the normals mapped by control point or by polygon?
-    FbxGeometryElement::EMappingMode lNormalMappingMode = FbxGeometryElement::eNone;
-    if(bHasNormals) {
-        lNormalMappingMode = lMesh->GetElementNormal(0)->GetMappingMode();
-        if (lNormalMappingMode == FbxGeometryElement::eNone) {
-            bHasNormals = false;
-        }
-        if (bHasNormals && lNormalMappingMode != FbxGeometryElement::eByControlPoint) {
-            bMapNormalsByControlPoint = false;
-        }
-    }
-    
-    FbxGeometryElement::EMappingMode lUVMappingMode = FbxGeometryElement::eNone;
-    if (bHasUvs) {
-        lUVMappingMode = lMesh->GetElementUV(0)->GetMappingMode();
-        if (lUVMappingMode == FbxGeometryElement::eNone) {
-            bHasUvs = false;
-        }
-        if (bHasUvs && lUVMappingMode != FbxGeometryElement::eByControlPoint) {
-            bMapUvsByControlPoint = false;
-        }
-    }
-    
-    bAllMappedByControlPoint = (bMapNormalsByControlPoint && bMapUvsByControlPoint);
-    
-//    if(lMaterialMappingMode == FbxGeometryElement::eAllSame) {
-//        
-//    }
-    
-    int lPolygonVertexCount = lMesh->GetControlPointsCount();
-    
-    if( bAllMappedByControlPoint ) {
-        const FbxVector4 * lControlPoints = lMesh->GetControlPoints();
-        for(int i = 0; i < lMesh->GetControlPointsCount(); i++ ) {
-            mesh.addVertex( ofVec3f( lControlPoints[i][0], lControlPoints[i][1], lControlPoints[i][2] ) );
-        }
+    // Normals //
+    if( lMesh->GetElementNormalCount() > 0 && lMesh->GetElementNormal() ) {
+        const FbxGeometryElementNormal * lNormalElement     = lMesh->GetElementNormal(0);
+        mNormalMappingMode = lNormalElement->GetMappingMode();
         
-        for(int i = 0; i < lMesh->GetPolygonCount(); i++ ) {
-            for (int lVerticeIndex = 0; lVerticeIndex < 3; ++lVerticeIndex) {
-                const int lControlPointIndex = lMesh->GetPolygonVertex(i, lVerticeIndex);
-                mesh.addIndex( lControlPointIndex );
-            }
-        }
+        ofLogVerbose() << "ofxFBXMesh :: normals detected. mapping mode: " << eMappingModeNames[ mNormalMappingMode ];
         
-        if(subMeshes.size() == 1) {
-            subMeshes[0].totalIndices = mesh.getNumIndices();
-        }
+        mesh.getNormals().resize( controlPointCount );
         
-        // normals
-        if(bHasNormals) {
-            ofMesh normalsMesh;
-            cout << "ofxFBXMesh :: we have normals for " << getName() << endl;
-            if(bMapNormalsByControlPoint) {
-                cout << "ofxFBXMesh :: normals by control point for " << getName() << endl;
-                const FbxGeometryElementNormal * lNormalElement = lMesh->GetElementNormal(0);
-                for(int i = 0; i < lMesh->GetControlPointsCount(); i++ ) {
-                    int lNormalIndex = i;
-                    if (lNormalElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
-                        lNormalIndex = lNormalElement->GetIndexArray().GetAt(i);
-                    }
-                    FbxVector4 lCurrentNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
-                    normalsMesh.addNormal( ofVec3f(lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2]) );
-                }
-                mesh.addNormals( normalsMesh.getNormals() );
-            }
-        }
-        
-        // textures //
-        if(bHasUvs) {
-            cout << "ofxFBXMesh :: we have tex coords for " << getName() << endl;
-            if(bMapUvsByControlPoint) {
-                cout << "ofxFBXMesh :: tex coords by control point " << getName() << endl;
-                const FbxGeometryElementUV * lUVElement = lMesh->GetElementUV(0);
-                for(int i = 0; i < lMesh->GetControlPointsCount(); i++ ) {
-                    int lUVIndex = i;
-                    if (lUVElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
-                        lUVIndex = lUVElement->GetIndexArray().GetAt(i);
-                    }
-                    FbxVector2 lCurrentUV = lUVElement->GetDirectArray().GetAt(lUVIndex);
-                    mesh.addTexCoord( ofVec2f(lCurrentUV[0], lCurrentUV[1]) );
-                }
-            }
-        }
-    } else {
-        
-//        cout << "--- " << getName() << " mapped by polygons ---------------" << endl;
-//        cout << "numSubMeshes = " << subMeshes.size() << " polygon count = " << lPolygonCount << " control points = " << fbxMesh->GetControlPointsCount() << endl;
-        
-//        if(lMaterialMappingMode == FbxGeometryElement::eNone) {
-//            cout << "Material mapping mode = none" << endl;
-//        } else if (lMaterialMappingMode == FbxGeometryElement::eByControlPoint) {
-//            cout << "Material mapping mode = eByControlPoint" << endl;
-//        } else if(lMaterialMappingMode == FbxGeometryElement::eByPolygonVertex) {
-//            cout << "Material mapping mode = eByPolygonVertex" << endl;
-//        } else if(lMaterialMappingMode == FbxGeometryElement::eByPolygon) {
-//            cout << "Material mapping mode = eByPolygon" << endl;
-//        } else if(lMaterialMappingMode == FbxGeometryElement::eByEdge) {
-//            cout << "Material mapping mode = eByEdge" << endl;
-//        } else if(lMaterialMappingMode == FbxGeometryElement::eAllSame) {
-//            cout << "Material mapping mode = eAllSame" << endl;
-//        }
-//        
-//        if(lMaterialIndice) {
-//            cout << "lMaterialIndice size = " << lMaterialIndice->GetCount() << endl;
-//        } else {
-//            cout << "did not get the lMaterialIndice" << endl;
-//        }
-        
-        const FbxVector4 * lControlPoints = fbxMesh->GetControlPoints();
-        mesh.getVertices().resize( lPolygonCount * 3 );
-        mesh.getIndices().resize( lPolygonCount * 3 );
-        if(bHasNormals) {
-            mesh.getNormals().resize( lPolygonCount * 3 );
-        }
-        
-//        cout << "Polygon vertex count = " << fbxMesh->GetPolygonVertexCount() << endl;
-        
-        const char * lUVName = NULL;
-        FbxStringList lUVNames;
-        fbxMesh->GetUVSetNames(lUVNames);
-        if(bHasUvs && lUVNames.GetCount() ) {
-            mesh.getTexCoords().resize( lPolygonCount * 3 );
-            lUVName = lUVNames[0];
-        }
-        for(int i = 0; i < lUVNames.GetCount(); i++ ) {
-//            cout << "lUVName = " << lUVNames[0] << endl;
-        }
-        
-        
-        
-        FbxVector4 lCurrentVertex;
         FbxVector4 lCurrentNormal;
-        FbxVector2 lCurrentUV;
-        
-        const FbxGeometryElementUV * lUVElement = lMesh->GetElementUV(0);
-        
-        int lVertexCount = 0;
-        for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
-            // The material for current face.
-            int lMaterialIndex = 0;
-            if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon) {
-                lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
-                if(lMaterialIndex < 0) {
-                    lMaterialIndex = 0;
+        if( mNormalMappingMode == FbxGeometryElement::eByControlPoint ) {
+            for(int i = 0; i < controlPointCount; i++ ) {
+                int lNormalIndex = i;
+                if (lNormalElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
+                    lNormalIndex = lNormalElement->GetIndexArray().GetAt(i);
                 }
+                lCurrentNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
+                mesh.getNormals()[i].set( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
             }
-            
-            // Where should I save the vertex attribute index, according to the material
-            const int lIndexOffset = subMeshes[lMaterialIndex].indexOffset + subMeshes[lMaterialIndex].triangleCount * 3;
-//            const int lIndexOffset = fbxMesh->GetPolygonVertexIndex(lPolygonIndex);
-            for (int lVerticeIndex = 0; lVerticeIndex < 3; ++lVerticeIndex) {
-                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
-                
-                // Populate the array with vertex attribute, if by polygon vertex.
-                mesh.getIndices()[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lVertexCount);
-                
-                lCurrentVertex = lControlPoints[ lControlPointIndex ];
-                mesh.getVertices()[lVertexCount].set( lCurrentVertex[0], lCurrentVertex[1], lCurrentVertex[2] );
-                
-                if (bHasNormals) {
+        } else if( mNormalMappingMode == FbxGeometryElement::eByPolygonVertex ) {
+            for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
+                int faceSize = fbxMesh->GetPolygonSize( lPolygonIndex );
+                for( int lVerticeIndex = 0; lVerticeIndex < faceSize; lVerticeIndex++ ) {
+                    const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
                     if(fbxMesh->GetPolygonVertexNormal( lPolygonIndex, lVerticeIndex, lCurrentNormal )) {
-                        int normalIndex = lVertexCount;
-                        mesh.getNormals()[normalIndex].set( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
+                        mesh.getNormals()[ lControlPointIndex ].set( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
                     }
                 }
-                
-                if (bHasUvs) {
-                    bool lUnmappedUV;
-                    fbxMesh->GetPolygonVertexUV(lPolygonIndex, lVerticeIndex, lUVName, lCurrentUV, lUnmappedUV);
-                    int tcoordIndex = lVertexCount;
-                    mesh.getTexCoords()[ tcoordIndex ].set( lCurrentUV[0], lCurrentUV[1] );
-                }
-                ++lVertexCount;
             }
-            
-            subMeshes[lMaterialIndex].triangleCount += 1;
-            subMeshes[lMaterialIndex].totalIndices += 3;
-            
-//            cout << "materialIndex = " << lMaterialIndex << endl;
+        } else {
+            ofLogVerbose() << "ofxFBXMesh :: clearing normals, only eByControlPoint and eByPolygonVertex supported.";
+            mNormalMappingMode = FbxGeometryElement::eNone;
+            mesh.clearNormals();
         }
-        
     }
     
-    // All faces will use the same material.
-//    if ( subMeshes.size() == 1) {
-//        //        meshMaterials.resize(1);
-////        subMeshes[0].totalIndices = mesh.getNumIndices();
+    
+    if( fbxMesh->GetElementUVCount() ) mesh.getTexCoords().resize( mesh.getNumVertices() );
+    
+    // TEX COORDS CODE BASED ON CODE FROM FBX SDK 2016.1 example //
+    //iterating over all uv sets
+    for (int lUVSetIndex = 0; lUVSetIndex < fbxMesh->GetElementUVCount(); lUVSetIndex++) {
+        const FbxGeometryElementUV* lUVElement = fbxMesh->GetElementUV( lUVSetIndex );
+        
+        if(!lUVElement)
+            continue;
+        
+        FbxGeometryElement::EMappingMode lUVMappingMode = lUVElement->GetMappingMode();
+        ofLogVerbose() << "ofxFBXMesh :: uv mapping mode: " << eMappingModeNames[ lUVMappingMode ];
+        // only support mapping mode eByPolygonVertex and eByControlPoint
+        if(lUVElement->GetMappingMode() != FbxGeometryElement::eByPolygonVertex &&
+           lUVElement->GetMappingMode() != FbxGeometryElement::eByControlPoint )
+            continue;
+        
+        //index array, where holds the index referenced to the uv data
+        const bool lUseIndex = lUVElement->GetReferenceMode() != FbxGeometryElement::eDirect;
+        const int lIndexCount= (lUseIndex) ? lUVElement->GetIndexArray().GetCount() : 0;
+        
+        //iterating through the data by polygon
+        const int lPolyCount = fbxMesh->GetPolygonCount();
+        
+        if( lUVElement->GetMappingMode() == FbxGeometryElement::eByControlPoint ) {
+            for( int lPolyIndex = 0; lPolyIndex < lPolyCount; ++lPolyIndex ) {
+                // build the max index array that we need to pass into MakePoly
+                const int lPolySize = fbxMesh->GetPolygonSize(lPolyIndex);
+                for( int lVertIndex = 0; lVertIndex < lPolySize; ++lVertIndex ) {
+                    FbxVector2 lUVValue;
+                    //get the index of the current vertex in control points array
+                    int lPolyVertIndex = fbxMesh->GetPolygonVertex(lPolyIndex,lVertIndex);
+                    //the UV index depends on the reference mode
+                    int lUVIndex = lUseIndex ? lUVElement->GetIndexArray().GetAt(lPolyVertIndex) : lPolyVertIndex;
+                    lUVValue = lUVElement->GetDirectArray().GetAt(lUVIndex);
+                    mesh.getTexCoords()[ lPolyVertIndex ].set( lUVValue[0], lUVValue[1] );
+                }
+            }
+        } else if (lUVElement->GetMappingMode() == FbxGeometryElement::eByPolygonVertex) {
+            int lIndexByPolygonVertex = 0;
+            FbxVector2 lUVValue;
+            //Let's get normals of each polygon, since the mapping mode of normal element is by polygon-vertex.
+            for(int lPolygonIndex = 0; lPolygonIndex < fbxMesh->GetPolygonCount(); lPolygonIndex++) {
+                //get polygon size, you know how many vertices in current polygon.
+                int lPolygonSize = fbxMesh->GetPolygonSize(lPolygonIndex);
+                //retrieve each vertex of current polygon.
+                for(int i = 0; i < lPolygonSize; i++) {
+                    int lNormalIndex = 0;
+                    //reference mode is direct, the normal index is same as lIndexByPolygonVertex.
+                    if( lUVElement->GetReferenceMode() == FbxGeometryElement::eDirect )
+                        lNormalIndex = lIndexByPolygonVertex;
+                    
+                    //reference mode is index-to-direct, get normals by the index-to-direct
+                    if( lUVElement->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+                        lNormalIndex = lUVElement->GetIndexArray().GetAt(lIndexByPolygonVertex);
+                    
+                    //Got normals of each polygon-vertex.
+                    lUVValue = lUVElement->GetDirectArray().GetAt(lNormalIndex);
+                    const int lControlPointIndex = fbxMesh->GetPolygonVertex( lPolygonIndex, i );
+                    mesh.getTexCoords()[ lControlPointIndex ].set( lUVValue[0], lUVValue[1] );
+                    
+                    lIndexByPolygonVertex++;
+                }//end for i //lPolygonSize
+            }//end for lPolygonIndex //PolygonCount
+        }
+    }
+    
+    
+    // VERTEX COLORS ////
+    if( lMesh->GetElementVertexColorCount() > 0 && lMesh->GetElementVertexColor() ) {
+        const FbxLayerElementVertexColor* pVertexColorElement   = lMesh->GetElementVertexColor();
+        FbxGeometryElement::EMappingMode lVertexColorMappingMode = pVertexColorElement->GetMappingMode();
+        
+        mesh.getColors().resize( controlPointCount );
+        
+        ofLogVerbose() << "ofxFBXMesh :: vertex colors detected: mapping mode: " << eMappingModeNames[ lVertexColorMappingMode ];
+        
+        FbxColor lVertexColor;
+        if( lVertexColorMappingMode == FbxGeometryElement::eByControlPoint ) {
+            int lVertexColorIndex = 0;
+            for(int i = 0; i < controlPointCount; i++ ) {
+                lVertexColorIndex = i;
+                if ( pVertexColorElement->GetReferenceMode() == FbxLayerElement::eIndexToDirect) {
+                    lVertexColorIndex = pVertexColorElement->GetIndexArray().GetAt(i);
+                }
+                lVertexColor = pVertexColorElement->GetDirectArray().GetAt(lVertexColorIndex);
+                mesh.getColors()[i].set( ofFloatColor(lVertexColor.mRed, lVertexColor.mGreen, lVertexColor.mBlue, lVertexColor.mAlpha ) );
+            }
+        } else {
+            ofLogVerbose() << "ofxFBXMesh :: clearing vertex colors, only eByControlPoint supported.";
+            mesh.clearColors();
+            lVertexColorMappingMode = FbxGeometryElement::eNone;
+        }
+    }
+    
+    
+    // update the meshes offsets and indices counts //
+    for( int i = 0; i < subMeshes.size(); i++ ) {
+        subMeshes[i].triangleCount = 0;
+        subMeshes[i].totalIndices = 0;
+    }
+    
+    // update the sub meshes with the proper amount of indices //
+    for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
+        // The material for current face.
+        int lMaterialIndex = 0;
+        if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon) {
+            lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
+            if(lMaterialIndex < 0) {
+                lMaterialIndex = 0;
+            }
+        }
+
+        subMeshes[lMaterialIndex].triangleCount += 1;
+        subMeshes[lMaterialIndex].totalIndices += lMesh->GetPolygonSize( lPolygonIndex );
+    }
+    
+    int toffset = 0;
+    for( int i = 0; i < subMeshes.size(); i++ ) {
+        subMeshes[i].indexOffset = toffset;
+        toffset += subMeshes[i].totalIndices;
+    }
+    
+//        
+//        // -- WORKING ----------------------------------------------------------- //
+////        const FbxVector4 * lControlPoints = fbxMesh->GetControlPoints();
+////        mesh.getVertices().resize( lPolygonCount * 3 );
+////        mesh.getIndices().resize( lPolygonCount * 3 );
+////        if(bHasNormals) {
+////            mesh.getNormals().resize( lPolygonCount * 3 );
+////        }
+////        
+//////        cout << "Polygon vertex count = " << fbxMesh->GetPolygonVertexCount() << endl;
+////        
+////        const char * lUVName = NULL;
+////        FbxStringList lUVNames;
+////        fbxMesh->GetUVSetNames(lUVNames);
+////        if(bHasUvs && lUVNames.GetCount() ) {
+////            mesh.getTexCoords().resize( lPolygonCount * 3 );
+////            lUVName = lUVNames[0];
+////        }
+//////        for(int i = 0; i < lUVNames.GetCount(); i++ ) {
+////////            cout << "lUVName = " << lUVNames[0] << endl;
+//////        }
+////        
+////        
+////        
+////        FbxVector4 lCurrentVertex;
+////        FbxVector4 lCurrentNormal;
+////        FbxVector2 lCurrentUV;
+////        
+////        const FbxGeometryElementUV * lUVElement = lMesh->GetElementUV(0);
+////        int maxCPIndex = -1;
+////        int lVertexCount = 0;
+////        for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
+////            // The material for current face.
+////            int lMaterialIndex = 0;
+////            if (lMaterialIndice && lMaterialMappingMode == FbxGeometryElement::eByPolygon) {
+////                lMaterialIndex = lMaterialIndice->GetAt(lPolygonIndex);
+////                if(lMaterialIndex < 0) {
+////                    lMaterialIndex = 0;
+////                }
+////            }
+////            
+////            
+////            // Where should I save the vertex attribute index, according to the material
+////            const int lIndexOffset = subMeshes[lMaterialIndex].indexOffset + subMeshes[lMaterialIndex].triangleCount * 3;
+//////            const int lIndexOffset = fbxMesh->GetPolygonVertexIndex(lPolygonIndex);
+////            for (int lVerticeIndex = 0; lVerticeIndex < 3; ++lVerticeIndex) {
+////                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
+////                
+////                // Populate the array with vertex attribute, if by polygon vertex.
+////                mesh.getIndices()[lIndexOffset + lVerticeIndex] = static_cast<unsigned int>(lVertexCount);
+////                
+////                lCurrentVertex = lControlPoints[ lControlPointIndex ];
+////                mesh.getVertices()[lVertexCount].set( lCurrentVertex[0], lCurrentVertex[1], lCurrentVertex[2] );
+////                
+////                if (bHasNormals) {
+////                    if(fbxMesh->GetPolygonVertexNormal( lPolygonIndex, lVerticeIndex, lCurrentNormal )) {
+////                        int normalIndex = lVertexCount;
+////                        mesh.getNormals()[normalIndex].set( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
+////                    }
+////                }
+////                
+////                if (bHasUvs) {
+////                    bool lUnmappedUV;
+////                    fbxMesh->GetPolygonVertexUV(lPolygonIndex, lVerticeIndex, lUVName, lCurrentUV, lUnmappedUV);
+////                    int tcoordIndex = lVertexCount;
+////                    mesh.getTexCoords()[ tcoordIndex ].set( lCurrentUV[0], lCurrentUV[1] );
+////                }
+////                
+////                if( bHasVertexColors ) {
+////                    int tColorIndex = lControlPointIndex;
+//////                    mesh.getColors()[ lVertexCount ].set
+//////                    cout << "lVertexCount: " << lVertexCount << " lControlPointIndex: " << lControlPointIndex << endl;
+////                    if( lControlPointIndex > maxCPIndex ) {
+////                        maxCPIndex = lControlPointIndex;
+////                    }
+////                }
+////                
+////                ++lVertexCount;
+////            }
+////            
+////            subMeshes[lMaterialIndex].triangleCount += 1;
+////            subMeshes[lMaterialIndex].totalIndices += 3;
+////            
+//////            cout << "materialIndex = " << lMaterialIndex << endl;
+////        }
+////        
+////        cout << "lVertexCount: " << lVertexCount << " maxCPIndex " << maxCPIndex << endl;
+//        // !-- WORKING ----------------------------------------------------- //
 //    }
-//    for(int i = 0; i < subMeshes.size(); i++ ) {
-//        cout << i << " submesh totalindicies = " << subMeshes[i].totalIndices << " total verts = " << mesh.getNumVertices() << " polygonos = " << lPolygonCount << endl;
-//    }
+    
+    
     
 //    cout << "--------------------------------------- " << endl << endl;
+    
+    //ofLogVerbose("ofxFBXMesh") << "sub meshes: " <<   subMeshes.size();
+    for( int i = 0; i < subMeshes.size(); i++ ) {
+        ofLogVerbose("ofxFBXMesh") << i << " submesh totalindicies = " << subMeshes[i].totalIndices << " index offset: " << subMeshes[i].indexOffset << " total verts = " << mesh.getNumVertices() << " polygonos = " << (lPolygonCount*3);
+    }
+    //ofLogVerbose("ofxFBXMesh ") << "verts: " << mesh.getNumVertices() << " indices: " << mesh.getNumIndices() << " normals: " << mesh.getNumNormals() << " tex coords: " << mesh.getNumTexCoords();
+    
     veebs.setMesh( mesh, GL_STREAM_DRAW );
     original = mesh;
     
-    if( bHasNormals ) {
+    if( mesh.hasNormals() ) {
         if(fbxMesh->GetControlPointsCount()) {
             mNormalsArray = new FbxVector4[ fbxMesh->GetControlPointsCount() ];
             populateNormals( mNormalsArray );
@@ -336,12 +390,28 @@ void ofxFBXMesh::configureMesh( ofMesh& aMesh ) {
 }
 
 //--------------------------------------------------------------
+void ofxFBXMesh::update( FbxTime& pTime, FbxPose* pPose ) {
+    FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, NULL );
+    ofMatrix4x4 ofgpos = toOf(lGlobalPosition);
+    setTransformMatrix( ofgpos );
+}
+
+//--------------------------------------------------------------
+void ofxFBXMesh::update( int aAnimIndex, signed long aMillis ) {
+    ofxFBXNode::update( aAnimIndex, aMillis );
+}
+
+//--------------------------------------------------------------
 void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose ) {
     const bool lHasShape    = fbxMesh->GetShapeCount() > 0;
     const bool lHasSkin     = fbxMesh->GetDeformerCount(FbxDeformer::eSkin) > 0;
+    const bool lHasVertexCache = fbxMesh->GetDeformerCount(FbxDeformer::eVertexCache);
     const bool lHasDeformation = lHasShape || lHasSkin;
     
     const int lVertexCount = fbxMesh->GetControlPointsCount();
+    
+//    cout << "ofxFBXMesh :: " << getName() << " vertices: " << lVertexCount << " has blend shape: " << lHasShape << " has skin: " << lHasSkin << " has def: " << lHasDeformation << " has vertex cache: " << lHasVertexCache << " | " << ofGetFrameNum() << endl;
+    
     if(!lHasDeformation || lVertexCount < 3) return;
     
     FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, pPose );
@@ -363,6 +433,7 @@ void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnim
         }
     }
     
+    
     if(lHasShape) {
         computeBlendShapes( aMesh, pTime, pAnimLayer );
     }
@@ -383,36 +454,87 @@ void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnim
     vector< ofVec3f >& amverts      = aMesh->getVertices();
     vector< ofVec3f >& amnormals    = aMesh->getNormals();
     
-    bool bUpdateNormals = lNormalArray != NULL;
-    if(bAllMappedByControlPoint) {
-//        cout << "updateMesh :: bAllMappedByControlPoint : " << endl;
-        for(int i = 0; i < fbxMesh->GetControlPointsCount(); i++ ) {
-            amverts[i].set( lVertexArray[i][0], lVertexArray[i][1], lVertexArray[i][2] );
-            if( bUpdateNormals ) {
+    bool bUpdateNormals = lNormalArray != NULL && amnormals.size() > 1;
+    
+    const int controlPointCount = fbxMesh->GetControlPointsCount();
+    // update the vertices //
+    for(int i = 0; i < controlPointCount; i++ ) {
+        amverts[i].set( lVertexArray[i][0], lVertexArray[i][1], lVertexArray[i][2] );
+    }
+    
+    if( bUpdateNormals ) {
+        if( mNormalMappingMode == FbxGeometryElement::eByControlPoint ) {
+            for(int i = 0; i < controlPointCount; i++ ) {
                 amnormals[i].set( lNormalArray[i][0], lNormalArray[i][1], lNormalArray[i][2] );
-                amnormals[i].normalize();
+//                amnormals[i].normalize();
             }
-        }
-    } else {
-//        cout << "updateMesh :: !bAllMappedByControlPoint : normals: " << bUpdateNormals << endl;
-        const int lPolygonCount = fbxMesh->GetPolygonCount();
-        int tvertcount = 0;
-        for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
-            for (int lVerticeIndex = 0; lVerticeIndex < 3; ++lVerticeIndex) {
-                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
-                amverts[tvertcount].set(lVertexArray[lControlPointIndex][0],
-                                        lVertexArray[lControlPointIndex][1],
-                                        lVertexArray[lControlPointIndex][2]);
-                if( bUpdateNormals ) {
-                    amnormals[tvertcount].set(lNormalArray[ lControlPointIndex ][0],
-                                              lNormalArray[ lControlPointIndex ][1],
-                                              lNormalArray[ lControlPointIndex ][2] );
-                    amnormals[tvertcount].normalize();
+        } else if( mNormalMappingMode == FbxGeometryElement::eByPolygonVertex ) {
+            const int lPolygonCount = fbxMesh->GetPolygonCount();
+            int polysize = 3;
+            
+            for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
+                polysize = fbxMesh->GetPolygonSize( lPolygonIndex );
+                for (int lVerticeIndex = 0; lVerticeIndex < polysize; ++lVerticeIndex) {
+                    
+                    const int lControlPointIndex = fbxMesh->GetPolygonVertex( lPolygonIndex, lVerticeIndex );
+//                    amverts[lControlPointIndex].set(lVertexArray[lControlPointIndex][0],
+//                                                    lVertexArray[lControlPointIndex][1],
+//                                                    lVertexArray[lControlPointIndex][2]);
+//                    if( bUpdateNormals ) {
+                        amnormals[lControlPointIndex].set(lNormalArray[ lControlPointIndex ][0],
+                                                          lNormalArray[ lControlPointIndex ][1],
+                                                          lNormalArray[ lControlPointIndex ][2] );
+//                        amnormals[lControlPointIndex].normalize();
+//                    }
                 }
-                ++tvertcount;
             }
         }
     }
+    
+//    if(bAllMappedByControlPoint) {
+////        cout << "updateMesh :: bAllMappedByControlPoint : " << endl;
+//        for(int i = 0; i < fbxMesh->GetControlPointsCount(); i++ ) {
+//            amverts[i].set( lVertexArray[i][0], lVertexArray[i][1], lVertexArray[i][2] );
+//            if( bUpdateNormals ) {
+//                amnormals[i].set( lNormalArray[i][0], lNormalArray[i][1], lNormalArray[i][2] );
+//                amnormals[i].normalize();
+//            }
+//        }
+//    } else {
+////        cout << "updateMesh :: !bAllMappedByControlPoint : normals: " << bUpdateNormals << endl;
+//        const int lPolygonCount = fbxMesh->GetPolygonCount();
+//        int tvertcount = 0;
+//        for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
+//            for (int lVerticeIndex = 0; lVerticeIndex < 3; ++lVerticeIndex) {
+//                
+//                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
+//                amverts[lControlPointIndex].set(lVertexArray[lControlPointIndex][0],
+//                                        lVertexArray[lControlPointIndex][1],
+//                                        lVertexArray[lControlPointIndex][2]);
+//                if( bUpdateNormals ) {
+//                    amnormals[lControlPointIndex].set(lNormalArray[ lControlPointIndex ][0],
+//                                              lNormalArray[ lControlPointIndex ][1],
+//                                              lNormalArray[ lControlPointIndex ][2] );
+//                    amnormals[lControlPointIndex].normalize();
+//                }
+////                ++tvertcount;
+//                
+//                //  WORKING ////////////
+////                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
+////                amverts[tvertcount].set(lVertexArray[lControlPointIndex][0],
+////                                        lVertexArray[lControlPointIndex][1],
+////                                        lVertexArray[lControlPointIndex][2]);
+////                if( bUpdateNormals ) {
+////                    amnormals[tvertcount].set(lNormalArray[ lControlPointIndex ][0],
+////                                              lNormalArray[ lControlPointIndex ][1],
+////                                              lNormalArray[ lControlPointIndex ][2] );
+////                    amnormals[tvertcount].normalize();
+////                }
+////                ++tvertcount;
+//                // !-- WORKING ///////////////
+//            }
+//        }
+//    }
     
     delete [] lVertexArray;
     if( lNormalArray != NULL ) {
@@ -424,8 +546,9 @@ void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnim
 
 //--------------------------------------------------------------
 void ofxFBXMesh::draw( ofMesh* aMesh ) {
-    
+//    cout << "ofxFBXMesh :: " << getName() << " verts: " << aMesh->haveVertsChanged() << " indices: " << aMesh->haveIndicesChanged() << " normals: " << aMesh->haveNormalsChanged() << " tex coords: " << aMesh->haveTexCoordsChanged() << " colors: " << aMesh->haveColorsChanged() << " | " << ofGetFrameNum() << endl;
     veebs.updateMesh( *aMesh );
+	
     
     const int lSubMeshCount = subMeshes.size();
     glEnable( GL_NORMALIZE );
@@ -443,8 +566,8 @@ void ofxFBXMesh::draw( ofMesh* aMesh ) {
             }
             bool bWasUsingTextures = false;
             if (lMaterialCache ) {
-//                cout << getName() << " has a material cache : with texture = " << lMaterialCache->hasTexture() << endl;
                 if( ofGetFrameNum() % 60 == 0 ) {
+//                    cout << getName() << " has a material cache : with texture = " << lMaterialCache->hasTexture() << endl;
 //                    cout << "******* submesh: " << lIndex << endl;
 //                    cout << lMaterialCache->getInfoAsString();
 //                    cout << "**************************** " << endl;
@@ -525,7 +648,7 @@ int ofxFBXMesh::getNumSubMeshes() {
 
 //--------------------------------------------------------------
 int ofxFBXMesh::getNumMaterials() {
-    return getNumSubMeshes();
+    return getMaterials().size();
 }
 
 //--------------------------------------------------------------
@@ -544,13 +667,31 @@ vector< ofxFBXMeshMaterial* > ofxFBXMesh::getMaterials() {
     for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex) {
         const FbxSurfaceMaterial * lMaterial = fbxMesh->GetNode()->GetMaterial(lIndex);
         ofxFBXMeshMaterial* lMaterialCache = NULL;
-        if(lMaterial) {
+        if(lMaterial && lMaterial->GetUserDataPtr() ) {
             lMaterialCache = static_cast<ofxFBXMeshMaterial *>(lMaterial->GetUserDataPtr());
             rMaterials.push_back( lMaterialCache );
         }
         
     }
     return rMaterials;
+}
+
+//--------------------------------------------------------------
+bool ofxFBXMesh::hasTexture() {
+    return ( getTextures().size() > 0 );
+}
+
+//--------------------------------------------------------------
+vector< ofxFBXTexture* > ofxFBXMesh::getTextures() {
+    auto tmats = getMaterials();
+    vector< ofxFBXTexture* > ttexs;
+    if( tmats.size() == 0 ) return ttexs;
+    for( auto& tmat : tmats ) {
+        if( tmat && tmat->hasTexture() ) {
+            ttexs.push_back( tmat->getTexturePtr() );
+        }
+    }
+    return ttexs;
 }
 
 //--------------------------------------------------------------
@@ -571,9 +712,9 @@ void ofxFBXMesh::computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer
         FbxBlendShape* lBlendShape = (FbxBlendShape*)fbxMesh->GetDeformer(lBlendShapeIndex, FbxDeformer::eBlendShape);
         
         int lBlendShapeChannelCount = lBlendShape->GetBlendShapeChannelCount();
-		for(int lChannelIndex = 0; lChannelIndex<lBlendShapeChannelCount; ++lChannelIndex) {
+		for(int lChannelIndex = 0; lChannelIndex < lBlendShapeChannelCount; ++lChannelIndex) {
 			FbxBlendShapeChannel* lChannel = lBlendShape->GetBlendShapeChannel(lChannelIndex);
-			if(lChannel) {
+			if(lChannel && pAnimLayer) {
 				// Get the percentage of influence on this channel.
 				FbxAnimCurve* lFCurve = fbxMesh->GetShapeChannel(lBlendShapeIndex, lChannelIndex, pAnimLayer);
 				if (!lFCurve) continue;
@@ -739,7 +880,7 @@ void ofxFBXMesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
 	int lSkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
     
 //    cout << "computeLinearDeformation :: number of skins = " << lSkinCount << endl;
-    
+    FbxAMatrix lInfluence;// = lVertexTransformMatrix;
 	for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex) {
 		FbxSkin * lSkinDeformer = (FbxSkin *)pMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
 		
@@ -770,7 +911,8 @@ void ofxFBXMesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
 				}
                 
 				// Compute the influence of the link on the vertex.
-				FbxAMatrix lInfluence = lVertexTransformMatrix;
+//				FbxAMatrix lInfluence = lVertexTransformMatrix;
+                lInfluence = lVertexTransformMatrix;
 				MatrixScale(lInfluence, lWeight);
                 
 				if (lClusterMode == FbxCluster::eAdditive) {
@@ -797,8 +939,9 @@ void ofxFBXMesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
     
 	//Actually deform each vertices here by information stored in lClusterDeformation and lClusterWeight
 //    cout << "going to deform the vertices now " << endl;
+    FbxVector4 lSrcVertex;
 	for (int i = 0; i < lVertexCount; i++) {
-		FbxVector4 lSrcVertex   = pVertexArray[i];
+		lSrcVertex   = pVertexArray[i];
 		FbxVector4& lDstVertex  = pVertexArray[i];
         
 		double lWeight = lClusterWeight[i];
@@ -960,10 +1103,10 @@ void ofxFBXMesh::computeClusterDeformation(FbxAMatrix& pGlobalPosition,
     FbxCluster::ELinkMode lClusterMode = pCluster->GetLinkMode();
     
     ofxFBXBone* bone        = NULL;
-    ofxFBXCluster* cluster  = NULL; 
+    ofxFBXCluster* cluster  = NULL;
+    FbxNode* boneNode       = pCluster->GetLink();
     
-    if(pCluster->GetLink()) {
-        FbxNode* boneNode = pCluster->GetLink();
+    if(boneNode) {
         if(boneNode->GetUserDataPtr()) {
             bone = static_cast<ofxFBXBone *>(boneNode->GetUserDataPtr());
         }
@@ -1082,8 +1225,11 @@ void ofxFBXMesh::populateNormals( FbxVector4* pNormalsArray ) {
                     lNormalIndex = lNormalElement->GetIndexArray().GetAt(lVertexIndex);
                 
                 //Got normals of each vertex.
+				//void KFbxMesh::GetPolygonVertexNormal&#40; int pPolyIndex, int pVertexIndex, KFbxVector4 &pNormal&#41; const;
+				//void KFbxMesh::GetPolygonVertexNormal&#40; int pPolyIndex, int pVertexIndex, KFbxVector4 &pNormal&#41; const;
                 FbxVector4 lNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
                 pNormalsArray[ lVertexIndex ] = lNormal;
+				// lNormals->GetDirectArray().Release&#40;&#40;void**&#41;&lFbxNormals&#41;
 //                if( gVerbose ) FBXSDK_printf("normals for vertex[%d]: %f %f %f %f \n", lVertexIndex, lNormal[0], lNormal[1], lNormal[2], lNormal[3]);
                 
                 //add your custom code here, to output normals or get them into a list, such as KArrayTemplate<FbxVector4>

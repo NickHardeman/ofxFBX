@@ -43,7 +43,7 @@ void ofxFBXAnimation::setup( FbxTime aStartTime, FbxTime aStopTime, FbxTime aFra
 }
 
 //--------------------------------------------------------------
-void ofxFBXAnimation::update() {
+void ofxFBXAnimation::update( float aElapsedTimeSeconds ) {
     bNewFrame = false;
     
 //    cout << "speed: " << _speed << endl;
@@ -53,8 +53,16 @@ void ofxFBXAnimation::update() {
     float tframeTime        = (1.f / clampFrameTime) * 1000.f;
     
     if(bPlaying) {
-        uint64_t etimeMillis = ofGetElapsedTimeMillis();
-        if( etimeMillis - lastUpdateTimeMillis >= tframeTime ) {
+		uint64_t etimeMillis;// = ofGetElapsedTimeMillis();
+		if (aElapsedTimeSeconds < 0) {
+			etimeMillis = ofGetElapsedTimeMillis();
+		}
+		else {
+			etimeMillis = aElapsedTimeSeconds * 1000.f;
+		}
+		//int etimeMillis = aElapsedTimeSeconds * 1000;
+		//cout << "etimeMillis: " << etimeMillis << " argMillis: " << (aElapsedTimeSeconds * 1000) << " secs: " << aElapsedTimeSeconds << " | " << ofGetFrameNum() << endl;
+        if(etimeMillis - lastUpdateTimeMillis >= tframeTime ) {
             bNewFrame = true;
             if( _speed >= 0 ) {
                 fbxCurrentTime += (fbxFrameTime);

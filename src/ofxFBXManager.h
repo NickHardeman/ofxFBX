@@ -12,12 +12,15 @@
 class ofxFBXManager : public ofNode {
 public:
     ofxFBXManager();
+    ~ofxFBXManager();
     
     void setup( ofxFBXScene* aScene );
-    void update();
+	void update(float aElapsedSeconds=-1);
     void lateUpdate();
     
     void draw();
+	void drawMesh(int aindex);
+	void drawMeshWireframe(int aindex);
     void drawMeshes();
     void drawMeshWireframes();
     void drawMeshNormals( float aLen = 4.f, bool aBFaceNormals = true );
@@ -74,11 +77,11 @@ protected:
     FbxAnimStack* currentAnimationStack;
     ofxFBXScene* fbxScene;
     
-    int animationIndex;
-    bool bAnimationsEnabled;
-    bool bSkeletonsDirty;
-    int poseIndex;
-    bool bPosesEnabled;
+    int animationIndex = 0;
+    bool bAnimationsEnabled = true;
+    int poseIndex = 0;
+    bool bPosesEnabled = false;
+    
 };
 
 
