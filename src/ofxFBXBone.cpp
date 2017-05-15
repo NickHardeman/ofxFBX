@@ -19,7 +19,14 @@ ofxFBXBone::ofxFBXBone() {
 
 //--------------------------------------------------------------
 ofxFBXBone::~ofxFBXBone() {
-    
+//    map<string, ofxFBXBone >::iterator it;
+//    for(it = bones.begin(); it != bones.end(); ++it ) {
+//        it->second.clearParent();
+//    }
+//    
+//    if( getParent() != NULL ) {
+//        clearParent();
+//    }
 }
 
 //--------------------------------------------------------------
@@ -61,29 +68,37 @@ void ofxFBXBone::setupFromSourceBones() {
 }
 
 //--------------------------------------------------------------
-void ofxFBXBone::cacheStartTransforms() {
-    // cache the orientations for use later //
-    origGlobalRotation  = getGlobalOrientation();
-    origLocalRotation   = getOrientationQuat();
-    origGlobalTransform = getGlobalTransformMatrix();
-    origLocalTransform  = getLocalTransformMatrix();
-}
-
-//--------------------------------------------------------------
 void ofxFBXBone::update( FbxTime& pTime, FbxPose* pPose ) {
     
     if( isAnimationEnabled() ) {
         if( !bIsRoot ) {
-            setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
-        } else {
-            FbxAMatrix tmatrix = fbxNode->EvaluateGlobalTransform( pTime );
+            //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
+            FbxAMatrix& tmatrix = fbxNode->EvaluateLocalTransform( pTime );
             setTransformMatrix( toOf(tmatrix) );
+        } else {
+            FbxAMatrix& tmatrix = fbxNode->EvaluateGlobalTransform( pTime );
+            setTransformMatrix( toOf(tmatrix) );
+//            setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
+            //FbxAMatrix& tmatrix = fbxNode->EvaluateLocalTransform( pTime );
+            //setTransformMatrix( toOf(tmatrix) );
         }
     }
     
     map<string, ofxFBXBone >::iterator it;
     for(it = bones.begin(); it != bones.end(); ++it ) {
         it->second.update( pTime, pPose );
+    }
+}
+
+//--------------------------------------------------------------
+void ofxFBXBone::update( int aAnimIndex, signed long aMillis ) {
+    if( isAnimationEnabled() ) {
+        ofxFBXNode::update( aAnimIndex, aMillis );
+    }
+    
+    map<string, ofxFBXBone >::iterator it;
+    for(it = bones.begin(); it != bones.end(); ++it ) {
+        it->second.update( aAnimIndex, aMillis );
     }
 }
 

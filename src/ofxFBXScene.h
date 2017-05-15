@@ -44,6 +44,7 @@ public:
         importShapes                    = true;
         importGobos                     = true;
         importAnimations                = true;
+        useKeyFrames                    = false;
     }
     
     bool importBones;
@@ -52,6 +53,7 @@ public:
     bool importShapes;
     bool importGobos;
     bool importAnimations;
+    bool useKeyFrames;
 };
 
 
@@ -96,6 +98,9 @@ private:
     void parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeletonBases, int aBoneLevel );
     void constructSkeletons( FbxNode* pNode, FbxAnimLayer* pAnimLayer );
     void constructSkeletonsRecursive( ofxFBXSkeleton* aSkeleton, FbxNode* pNode, int aBoneLevel );
+    
+    void populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, int aAnimIndex );
+    vector< ofxFBXKey<float> > getFloatKeys( FbxAnimCurve* pCurve );
     
     FbxTime fbxFrameTime;
     string fbxFilePath;

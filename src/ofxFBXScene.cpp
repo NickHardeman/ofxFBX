@@ -20,14 +20,25 @@ ofxFBXScene::ofxFBXScene() {
 //--------------------------------------------------------------
 ofxFBXScene::~ofxFBXScene() {
     
+	if (currentFbxAnimationLayer != NULL) {
+		currentFbxAnimationLayer->Destroy();
+	}
+
     if(lScene != NULL ) {
         deleteCachedTexturesInScene( lScene );
         deleteCachedMaterialsRecursive( lScene->GetRootNode() );
+		lScene->Destroy(true);
     }
+
+	
     
     if(lSdkManager != NULL) {
-        DestroySdkObjects(lSdkManager, true);
-        lSdkManager = NULL;
+		bool lResult;
+		// Destroy all objects created by the FBX SDK.
+		//DestroySdkObjects(lSdkManager, lResult);
+		//lSdkManager->Destroy();
+		//delete lSdkManager;
+       // lSdkManager = NULL;
     }
 }
 
@@ -104,25 +115,25 @@ bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
 //    fbxFrameTime.Set( lScene->GetGlobalSettings().GetFrameRate() );
 //    fbxFrameTime.SetTime(0, 0, 0, 1, 0, FbxTime::eFrames24 );
 //    fbxFrameTime.SetSecondDouble( 1.f / 24.f );
-    cout << "time mode: " << lScene->GetGlobalSettings().GetTimeMode() << endl;
+    ofLogVerbose() << "ofxFBXScene :: time mode: " << lScene->GetGlobalSettings().GetTimeMode() << endl;
     
     // Get the list of all the animation stack.
     if( areAnimationsEnabled() ) {
         populateAnimationInformation();
     }
     
-    if(animations.size() > 0) {
-        FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
-        if (lCurrentAnimationStack == NULL) {
-            cout << "this is a problem. The anim stack should be found in the scene!" << endl;
-            // this is a problem. The anim stack should be found in the scene!
-            return false;
-        }
-        
-        // we assume that the first animation layer connected to the animation stack is the base layer
-        // (this is the assumption made in the FBXSDK)
-        currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
-    }
+//    if(animations.size() > 0) {
+//        FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
+//        if (lCurrentAnimationStack == NULL) {
+//            ofLogError("ofxFBXScene :: ") << "this is a problem. The anim stack should be found in the scene!" << endl;
+//            // this is a problem. The anim stack should be found in the scene!
+//            return false;
+//        }
+//        
+//        // we assume that the first animation layer connected to the animation stack is the base layer
+//        // (this is the assumption made in the FBXSDK)
+//        currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
+//    }
     
     // populate meshes //
     populateMeshesRecursive( lScene->GetRootNode(), currentFbxAnimationLayer );
@@ -130,6 +141,45 @@ bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
     // populate bones //
     if( _settings.importBones ) {
         constructSkeletons( lScene->GetRootNode(), currentFbxAnimationLayer );
+    }
+    
+    // add in the keyframe information //
+    if( areAnimationsEnabled() && _settings.useKeyFrames ) {
+        // politely inform the skeletons that we will be using keyframes //
+        for( auto& skel : skeletons ) {
+            skel->setUseKeyFrames( true );
+        }
+        
+        for( auto& mesh : meshes ) {
+            mesh->setUseKeyFrames( true );
+        }
+        
+        for( int i = 0; i < getNumAnimations(); i++ ) {
+            
+            FbxAnimStack* currentAnimationStack = getFBXScene()->FindMember<FbxAnimStack>( (&animations[i].fbxname)->Buffer() );
+            if (currentAnimationStack == NULL) {
+                // this is a problem. The anim stack should be found in the scene!
+                ofLogWarning("ofxFBXManager :: setAnimation : the anim stack was not found in the scene!");
+                continue;
+            }
+            currentFbxAnimationLayer = currentAnimationStack->GetMember<FbxAnimLayer>();
+            getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
+            
+            populateKeyFrames( lScene->GetRootNode(), currentFbxAnimationLayer, i );
+        }
+    }
+    
+    if(animations.size() > 0) {
+        FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
+        if (lCurrentAnimationStack == NULL) {
+            ofLogError("ofxFBXScene :: ") << "this is a problem. The anim stack should be found in the scene!" << endl;
+            // this is a problem. The anim stack should be found in the scene!
+            return false;
+        }
+        
+        // we assume that the first animation layer connected to the animation stack is the base layer
+        // (this is the assumption made in the FBXSDK)
+        currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
     }
     
     return true;
@@ -201,12 +251,12 @@ void ofxFBXScene::cacheTexturesInScene( FbxScene* pScene ) {
             }
             
             if(!bFoundTexture) {
-                ofLogWarning("Could not find texture ") << filepath;
+                ofLogWarning("ofxFBXScene :: Could not find texture ") << filepath;
                 continue;
             }
             
             if (bFoundTexture) {
-                ofTexture* texture = new ofTexture();
+				ofxFBXTexture* texture = new ofxFBXTexture();
                 ofPixels pixels;
                 bool loaded = ofLoadImage(pixels, filepath);
                 if(loaded){
@@ -215,14 +265,15 @@ void ofxFBXScene::cacheTexturesInScene( FbxScene* pScene ) {
                     texture->loadData(pixels);
                 }
                 if(loaded) {
-                    ofLogVerbose("Loaded the texture from ") << filepath << endl;
+                    ofLogVerbose("ofxFBXScene :: Loaded the texture from ") << filepath << endl;
                     
                     texture->getTextureData().bFlipTexture = true;
                     texture->disableTextureMatrix();
+					texture->filePath = filepath;
                     
                     lFileTexture->SetUserDataPtr( texture );
                 } else {
-                    ofLogWarning("Failed to load texture for ") << lFileName;
+                    ofLogWarning("ofxFBXScene :: Failed to load texture for ") << lFileName;
                     delete texture;
                     texture = NULL;
                 }
@@ -237,7 +288,7 @@ void ofxFBXScene::deleteCachedTexturesInScene( FbxScene* pScene ) {
         FbxTexture* lTexture = pScene->GetTexture(lTextureIndex);
         FbxFileTexture* lFileTexture = FbxCast<FbxFileTexture>(lTexture);
         if (lFileTexture && lFileTexture->GetUserDataPtr()) {
-            ofTexture* texture = static_cast<ofTexture *>( lFileTexture->GetUserDataPtr() );
+			ofxFBXTexture* texture = static_cast<ofxFBXTexture *>( lFileTexture->GetUserDataPtr() );
             lFileTexture->SetUserDataPtr(NULL);
             delete texture;
             texture = NULL;
@@ -267,6 +318,7 @@ void ofxFBXScene::cacheMaterialsRecursive( FbxNode* pNode ) {
         FbxSurfaceMaterial * lMaterial = pNode->GetMaterial(lMaterialIndex);
         if (lMaterial && !lMaterial->GetUserDataPtr()) {
             ofxFBXMeshMaterial* materialCache = new ofxFBXMeshMaterial();
+            ofLogVerbose("ofxFBXScene") << "found a material :: " << lMaterial->GetName();
             materialCache->setup( lMaterial );
             lMaterial->SetUserDataPtr( materialCache );
         }
@@ -286,6 +338,7 @@ void ofxFBXScene::deleteCachedMaterialsRecursive( FbxNode* pNode ) {
             ofxFBXMeshMaterial* materialCache = static_cast<ofxFBXMeshMaterial *>(lMaterial->GetUserDataPtr());
             lMaterial->SetUserDataPtr(NULL);
             delete materialCache;
+			materialCache = NULL;
         }
     }
     
@@ -332,8 +385,25 @@ void ofxFBXScene::populateAnimationInformation() {
         animations[i].fbxCurrentTime = animations[i].fbxStartTime;
         FbxString tfbxName      = FbxString(*mAnimStackNameArray[i]);
         animations[i].fbxname   = tfbxName;
-        animations[i].ID        = i;
+        animations[i].index     = i;
         animations[i].name      = FbxString(*mAnimStackNameArray[i]);
+        //FbxString ostr = startTime;
+        //startTime.
+        ofLogVerbose("ofxFBXScene") << i << " - " << " ofxFBXScene :: animations[" << i << "].name: " << animations[i].name << " starttime: " << startTime.GetTimeString() << " end time: " << endTime.GetTimeString() << endl;
+        
+//        int l;
+//        int nbAnimLayers = lCurrentAnimationStack->GetMemberCount<FbxAnimLayer>();
+        
+//        cout << "ofxFBXScene :: animation: " << animations[i].name << " num layers: " << nbAnimLayers << " | " << ofGetFrameNum() << endl;
+        
+//        for (l = 0; l < nbAnimLayers; l++) {
+//            FbxAnimLayer* lAnimLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>(l);
+//            populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, int aAnimIndex ) {
+            
+//        }
+        
+        
+        
 //        cout << i << " - ofxFBXScene :: name " << animations[i].name << "| fbxname: " << FbxString(*mAnimStackNameArray[i]) << endl;
     }
     
@@ -378,12 +448,17 @@ void ofxFBXScene::populateMeshesRecursive( FbxNode* pNode, FbxAnimLayer* pAnimLa
                 shared_ptr<ofxFBXMesh> mesh = meshes.back();
                 mesh->setup( pNode );
                 
+                if( !pNode->GetUserDataPtr() ) {
+                    pNode->SetUserDataPtr( mesh.get() );
+                }
+                
 //            cout << "ofxFBXScene :: populateMeshesRecursive : name = " << pNode->GetNameOnly() << endl;
                 
                 FbxAMatrix lGlobalPosition = GetGlobalPosition(pNode, FBXSDK_TIME_INFINITE, NULL );
                 
                 ofMatrix4x4 ofgpos = toOf(lGlobalPosition);
                 mesh->setTransformMatrix( ofgpos );
+                mesh->cacheStartTransforms();
                 
                 // Associtate the clusters with some user data so that we can move them around //
                 int lSkinCount = pNode->GetMesh()->GetDeformerCount(FbxDeformer::eSkin);
@@ -551,6 +626,199 @@ void ofxFBXScene::constructSkeletonsRecursive( ofxFBXSkeleton* aSkeleton, FbxNod
     for (int lChildIndex = 0; lChildIndex < lChildCount; ++lChildIndex) {
         constructSkeletonsRecursive( aSkeleton, pNode->GetChild(lChildIndex), aBoneLevel+1 );
     }
+}
+
+//--------------------------------------------------------------
+void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, int aAnimIndex ) {
+    
+    if( !pNode ) return;
+    
+    // populate the position first //
+    
+    ofxFBXNode* fnode = nullptr;
+    
+    FbxNodeAttribute* lNodeAttribute = pNode->GetNodeAttribute();
+    if (lNodeAttribute) {
+        if (lNodeAttribute->GetAttributeType() == FbxNodeAttribute::eSkeleton) {
+            if ( pNode->GetUserDataPtr() ) {
+                ofxFBXBone* bonePtr = static_cast<ofxFBXBone *>(pNode->GetUserDataPtr());
+                fnode = bonePtr;
+            }
+        } else if (lNodeAttribute->GetAttributeType() == FbxNodeAttribute::eMesh ||
+                   lNodeAttribute->GetAttributeType() == FbxNodeAttribute::eNurbs ||
+                   lNodeAttribute->GetAttributeType() == FbxNodeAttribute::ePatch ||
+                   lNodeAttribute->GetAttributeType() == FbxNodeAttribute::eNurbsSurface) {
+            if( pNode->GetUserDataPtr() ) {
+                ofxFBXMesh* meshPtr = static_cast<ofxFBXMesh *>(pNode->GetUserDataPtr());
+                fnode = meshPtr;
+            }
+        }
+    }
+    
+    if( fnode ) {
+        bool bGrabGlobalTransform = false;
+        FbxNodeAttribute* lNodeAttribute = pNode->GetNodeAttribute();
+        if ( lNodeAttribute && lNodeAttribute->GetAttributeType() == FbxNodeAttribute::eSkeleton ) {
+            if(pNode->GetSkeleton() && pNode->GetSkeleton()->IsSkeletonRoot() ) {
+                bGrabGlobalTransform = true;
+            }
+        }
+        
+        // figure out the parsing //
+        ofxFBXAnimation& tanim = animations[ aAnimIndex ];
+        ofxFBXKeyCollection& kcollection = fnode->getKeyCollection( aAnimIndex );
+        for( int i = 0; i < tanim.getTotalNumFrames(); i++ ) {
+            tanim.setFrame(i);
+            // now get the information //
+            ofMatrix4x4 tmat;
+//            if( pNode->GetParent() ) {
+            if( !bGrabGlobalTransform ) {
+                //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
+                FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( tanim.fbxCurrentTime );
+                tmat = ( toOf(tmatrix) );
+            } else { 
+                FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( tanim.fbxCurrentTime );
+                tmat = ( toOf(tmatrix) );
+            }
+            ofVec3f tpos;
+            ofVec3f tscale;
+            ofQuaternion tquat, so;
+            tmat.decompose( tpos, tquat, tscale, so );
+            
+            ofxFBXKey<float> tkeyPosX;
+            tkeyPosX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tkeyPosX.value = tpos.x;
+            kcollection.posKeysX.push_back( tkeyPosX );
+            ofxFBXKey<float> tkeyPosY;
+            tkeyPosY.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tkeyPosY.value = tpos.y;
+            kcollection.posKeysY.push_back( tkeyPosY );
+            ofxFBXKey<float> tkeyPosZ;
+            tkeyPosZ.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tkeyPosZ.value = tpos.z;
+            kcollection.posKeysZ.push_back( tkeyPosZ );
+            
+            
+            ofxFBXKey<float> tkeyScaleX;
+            tkeyScaleX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tkeyScaleX.value = tscale.x;
+            kcollection.scaleKeysX.push_back( tkeyScaleX );
+            ofxFBXKey<float> tkeyScaleY;
+            tkeyScaleY.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tkeyScaleY.value = tscale.y;
+            kcollection.scaleKeysY.push_back( tkeyScaleY );
+            ofxFBXKey<float> tkeyScaleZ;
+            tkeyScaleZ.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tkeyScaleZ.value = tscale.z;
+            kcollection.scaleKeysZ.push_back( tkeyScaleZ );
+            
+            ofxFBXKey<ofQuaternion> tRotKey;
+            tRotKey.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+            tRotKey.value = tquat;
+            kcollection.rotKeys.push_back( tRotKey );
+            
+        }
+        
+//        cout << "ofxFBXScene :: adding keyframes for : " << pNode->GetName() << " is root: " << (fnode->isRoot()) << " num pos keys: " << kcollection.posKeysX.size() << endl;
+    }
+    
+    
+    
+    if( fnode && false ) {
+        FbxAnimCurve* lAnimCurveX = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
+        FbxAnimCurve* lAnimCurveY = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+        FbxAnimCurve* lAnimCurveZ = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+        
+        ofxFBXKeyCollection& kcollection = fnode->getKeyCollection( aAnimIndex );
+        kcollection.posKeysX = getFloatKeys( lAnimCurveX );
+        kcollection.posKeysY = getFloatKeys( lAnimCurveY );
+        kcollection.posKeysZ = getFloatKeys( lAnimCurveZ );
+        
+        FbxAnimCurve* lScaleCurveX = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
+        FbxAnimCurve* lScaleCurveY = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+        FbxAnimCurve* lScaleCurveZ = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+        kcollection.scaleKeysX = getFloatKeys( lScaleCurveX );
+        kcollection.scaleKeysY = getFloatKeys( lScaleCurveY );
+        kcollection.scaleKeysZ = getFloatKeys( lScaleCurveZ );
+        
+        
+        // rotation //
+        FbxAnimCurve* lRotCurveX = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
+        FbxAnimCurve* lRotCurveY = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+        FbxAnimCurve* lRotCurveZ = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+        
+        map< signed long, int > mTimeCount;
+        vector< ofxFBXKey<ofQuaternion> > newRotKeys;
+        int xKeyCount = lRotCurveX ? lRotCurveX->KeyGetCount() : 0;
+        int yKeyCount = lRotCurveY ? lRotCurveY->KeyGetCount() : 0;
+        int zKeyCount = lRotCurveZ ? lRotCurveZ->KeyGetCount() : 0;
+        
+        FbxTime lKeyTime;
+        int lCount, lKeyCount;
+        if(lRotCurveX) {
+            lKeyCount = lRotCurveX->KeyGetCount();
+            for(lCount = 0; lCount < lKeyCount; lCount++) {
+                lKeyTime  = lRotCurveX->KeyGetTime(lCount);
+                if( mTimeCount.count(lKeyTime.GetMilliSeconds()) == 0 ) {
+                    mTimeCount[lKeyTime.GetMilliSeconds()] += 1;
+                    
+                    ofxFBXKey<ofQuaternion> tkey;
+                    ofMatrix4x4 tOfMat;
+                    if( pNode->GetParent() ) {
+                        FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( lKeyTime );
+                        tOfMat = toOf( tmatrix );
+                    } else {
+                        FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( lKeyTime );
+                        tOfMat = toOf( tmatrix );
+                    }
+                    
+                    ofVec3f t,s;
+                    ofQuaternion so;
+                    
+                    tOfMat.decompose( t, tkey.value, s, so);
+                    
+                    tkey.millis = lKeyTime.GetMilliSeconds();
+                    newRotKeys.push_back( tkey );
+                }
+            }
+        }
+        
+        if( newRotKeys.size() ) {
+            kcollection.rotKeys = newRotKeys;
+        }
+        
+        ofLogVerbose("ofxFBX :: populateKeyFrames : ") << "anim: " << aAnimIndex << " node: " << fnode->getName() << " num pos keys: " << kcollection.posKeysX.size() << " num rot keys: " << kcollection.rotKeys.size() << " num scale keys: " << kcollection.scaleKeysX.size() << " | " << ofGetFrameNum() << endl;
+    }
+    
+    // cycle through the children //
+    const int lChildCount = pNode->GetChildCount();
+    for (int lChildIndex = 0; lChildIndex < lChildCount; ++lChildIndex) {
+        populateKeyFrames( pNode->GetChild(lChildIndex), pAnimLayer, aAnimIndex );
+    }
+    
+}
+
+//--------------------------------------------------------------
+vector< ofxFBXKey<float> > ofxFBXScene::getFloatKeys( FbxAnimCurve* pCurve ) {
+    vector< ofxFBXKey<float> > tkeys;
+    
+    FbxTime lKeyTime;
+    float lKeyValue;
+    int lKeyCount, lCount;
+    
+    if( pCurve ) {
+        lKeyCount = pCurve->KeyGetCount();
+        for(lCount = 0; lCount < lKeyCount; lCount++) {
+            lKeyValue = static_cast<float>(pCurve->KeyGetValue(lCount));
+            lKeyTime  = pCurve->KeyGetTime(lCount);
+            ofxFBXKey<float> tkey;
+            tkey.value = lKeyValue;
+            tkey.millis = lKeyTime.GetMilliSeconds();
+            tkeys.push_back( tkey );
+        }
+    }
+    
+    return tkeys;
 }
 
 #pragma mark - Poses

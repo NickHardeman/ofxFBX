@@ -57,6 +57,9 @@ public:
 	void setFBXMesh( FbxMesh* lMesh );
     void configureMesh( ofMesh& aMesh );
     
+    void update( FbxTime& pTime, FbxPose* pPose );
+    virtual void update( int aAnimIndex, signed long aMillis );
+    
     void updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose  );
 
 	void draw( ofMesh* aMesh );
@@ -68,6 +71,9 @@ public:
     
     const vector<ofxFBXSubMesh>& getSubMeshes() const { return subMeshes; }
     vector< ofxFBXMeshMaterial* > getMaterials();
+    
+    bool hasTexture();
+    vector< ofxFBXTexture* > getTextures();
     
     bool hasClusterDeformation();
     
@@ -106,6 +112,9 @@ private:
 	ofMesh original;
 	FbxMesh* fbxMesh;
     FbxVector4* mNormalsArray;
-    bool bAllMappedByControlPoint;
+//    bool bAllMappedByControlPoint;
+    
+    FbxGeometryElement::EMappingMode mNormalMappingMode = FbxGeometryElement::eNone;
+    
 };
 

@@ -27,6 +27,9 @@ void ofxFBXSkeleton::setup( FbxNode *pNode ) {
 
 //--------------------------------------------------------------
 void ofxFBXSkeleton::reconstructNodeParenting() {
+    
+//    cout << "ofxFBXSkeleton :: rootSounce->hasParent() : " << (rootSource->getParent()==NULL) << " | " << ofGetFrameNum() << endl;
+    
     ofxFBXBone tbone = *rootSource;
     root = tbone;
     
@@ -58,6 +61,11 @@ void ofxFBXSkeleton::reconstructNodeParenting() {
 //--------------------------------------------------------------
 void ofxFBXSkeleton::update( FbxTime& pTime, FbxPose* pPose ) {
     root.update( pTime, pPose );
+}
+
+//--------------------------------------------------------------
+void ofxFBXSkeleton::update( int aAnimIndex, signed long aMillis ) {
+    root.update( aAnimIndex, aMillis );
 }
 
 //--------------------------------------------------------------
@@ -116,6 +124,11 @@ string ofxFBXSkeleton::toString() {
     string tstr = "Skeleton: " + root.getName()+ " total bones: " + ofToString( getNumBones(), 0 ) + "\n ";
     tstr += root.getAsString();
     return tstr;
+}
+
+//--------------------------------------------------------------
+map< string, ofxFBXBone* > ofxFBXSkeleton::getAllBones() {
+    return root.getAllBones();
 }
 
 

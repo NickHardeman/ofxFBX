@@ -21,6 +21,15 @@ ofxFBXManager::ofxFBXManager() {
 }
 
 //--------------------------------------------------------------
+ofxFBXManager::~ofxFBXManager() {
+    for( int i = 0; i < skeletons.size(); i++ ) {
+        skeletons[i]->clearParent();
+        skeletons[i]->root.clearParent();
+    }
+    skeletons.clear();
+}
+
+//--------------------------------------------------------------
 void ofxFBXManager::setup( ofxFBXScene* aScene ) {
     fbxScene = aScene;
     if(fbxScene->getFBXScene() == NULL) {
@@ -49,10 +58,16 @@ void ofxFBXManager::setup( ofxFBXScene* aScene ) {
     
     aScene->populatePoses( poses );
     
+    
+    if( hasAnimations() ) {
+        // set to the first animation
+        setAnimation(0);
+    }
+    
 }
 
 //--------------------------------------------------------------
-void ofxFBXManager::update() {
+void ofxFBXManager::update(float aElapsedSeconds) {
     
     FbxPose * lPose = NULL;
     // poses will override the animations and the settings of the bones //
@@ -63,7 +78,7 @@ void ofxFBXManager::update() {
     
     if( !areAnimationsEnabled() || !hasAnimations() ) {
         FbxTime ttime(FBXSDK_TIME_INFINITE);
-//        cout << "Calling update bones: " << " | " << ofGetElapsedTimef() << endl;
+        //cout << "Calling update bones: " << " | " << ofGetElapsedTimef() << endl;
         for(int i = 0; i < skeletons.size(); i++ ) {
             skeletons[i]->update( ttime, lPose );
         }
@@ -75,7 +90,7 @@ void ofxFBXManager::update() {
     
 //    cout << "Should not be reaching here: ofxFBXManager :: update | " << ofGetFrameNum() << endl;
     
-    animations[animationIndex].update();
+    animations[animationIndex].update(aElapsedSeconds);
     
     if( currentAnimationStack != NULL ) {
         fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
@@ -86,10 +101,25 @@ void ofxFBXManager::update() {
     // If other fbxManagers are playing animations at different times or moving around bones, then it will get weird if it doesn't
     // update.  //
 //    if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
-        for(int i = 0; i < skeletons.size(); i++ ) {
-            skeletons[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
+    signed long tFbxAnimTime = (signed long)animations[animationIndex].fbxCurrentTime.GetMilliSeconds();
+    vector< shared_ptr<ofxFBXMesh> > fbxMeshes = fbxScene->getMeshes();
+    for(int i = 0; i < fbxMeshes.size(); i++ ) {
+        if( fbxMeshes[i]->usingKeyFrames() ) {
+            fbxMeshes[i]->update( animationIndex, tFbxAnimTime );
+        } else {
+            fbxMeshes[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
         }
-//    }
+        meshTransforms[i].setTransformMatrix( fbxMeshes[i]->getGlobalTransformMatrix() );
+    }
+    
+    for( auto& skel : skeletons ) {
+        if( skel->usingKeyFrames() ) {
+            skel->update( animationIndex, tFbxAnimTime );
+        } else {
+            skel->update( animations[animationIndex].fbxCurrentTime, lPose );
+        }
+    
+    }
 }
 
 //--------------------------------------------------------------
@@ -116,10 +146,13 @@ void ofxFBXManager::lateUpdate() {
             for( int i = 0; i < skeletons.size(); i++ ) {
                 skeletons[i]->lateUpdate();
             }
-            
-            for(int i = 0; i < fbxMeshes.size(); i++ ) {
-                fbxMeshes[i]->updateMesh( &meshes[i], animations[animationIndex].fbxCurrentTime, currentFbxAnimationLayer, NULL );
-            }
+        
+        signed long tFbxAnimTime = (signed long)animations[animationIndex].fbxCurrentTime.GetMilliSeconds();
+        for(int i = 0; i < fbxMeshes.size(); i++ ) {
+//            cout << i << " - ofxFBXManager :: lateUpdate : trying to update the mesh " << tFbxAnimTime << " time string: " << animations[animationIndex].fbxCurrentTime.GetTimeString() << endl;
+            fbxMeshes[i]->updateMesh( &meshes[i], animations[animationIndex].fbxCurrentTime, currentFbxAnimationLayer, NULL );
+//            meshTransforms[i].setTransformMatrix( fbxMeshes[i]->getGlobalTransformMatrix() );
+        }
             
 //        }
     }
@@ -131,8 +164,30 @@ void ofxFBXManager::draw() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXManager::drawMesh(int aindex) {
+	if (aindex < 0 || aindex >= meshes.size()) {
+		return;
+	}
+	vector< shared_ptr<ofxFBXMesh> >& fbxMeshes = fbxScene->getMeshes();
+	meshTransforms[aindex].transformGL();
+	fbxMeshes[aindex]->draw(&meshes[aindex]);
+	meshTransforms[aindex].restoreTransformGL();
+}
+
+//--------------------------------------------------------------
+void ofxFBXManager::drawMeshWireframe(int aindex) {
+	if (aindex < 0 || aindex >= meshes.size()) {
+		return;
+	}
+	vector< shared_ptr<ofxFBXMesh> >& fbxMeshes = fbxScene->getMeshes();
+	meshTransforms[aindex].transformGL();
+	meshes[aindex].drawWireframe();
+	meshTransforms[aindex].restoreTransformGL();
+}
+
+//--------------------------------------------------------------
 void ofxFBXManager::drawMeshes() {
-    vector< shared_ptr<ofxFBXMesh> > fbxMeshes = fbxScene->getMeshes();
+    vector< shared_ptr<ofxFBXMesh> >& fbxMeshes = fbxScene->getMeshes();
     for(int i = 0; i < fbxMeshes.size(); i++ ) {
         meshTransforms[i].transformGL();
         fbxMeshes[i]->draw( &meshes[i] );

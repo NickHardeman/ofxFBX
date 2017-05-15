@@ -46,11 +46,14 @@ void ofxFBXMeshMaterial::setup( const FbxSurfaceMaterial * pMaterial ) {
 //    cout << "shininess = " << shininess << endl;
     
     const int lTextureCount = pMaterial->GetSrcObjectCount<FbxFileTexture>();
-//    cout << pMaterial->GetName() << " texture count = " << lTextureCount << endl;
+    ofLogVerbose("ofxFBXMeshMaterial::setup") << pMaterial->GetName() << " texture count = " << lTextureCount;
     
     // pMaterial->GetClassId().Is(KFbxSurfacePhong::ClassId)
     
     // search for a texture based on the material properties :)
+	if (!hasTexture()) {
+		findTextureForProperty(pMaterial, FbxSurfaceMaterial::sShadingModel);
+	}
     if(!hasTexture()) {
         findTextureForProperty( pMaterial, FbxSurfaceMaterial::sEmissive );
     }
@@ -91,7 +94,7 @@ void ofxFBXMeshMaterial::setup( const FbxSurfaceMaterial * pMaterial ) {
         findTextureForProperty( pMaterial, FbxSurfaceMaterial::sVectorDisplacementColor );
     }
     if(!hasTexture()) {
-//        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sMultiLayer );
+        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sMultiLayer );
     }
     
     
@@ -126,7 +129,7 @@ bool ofxFBXMeshMaterial::hasTexture() {
 }
 
 //--------------------------------------------------------------
-ofTexture* ofxFBXMeshMaterial::getTexturePtr() {
+ofxFBXTexture* ofxFBXMeshMaterial::getTexturePtr() {
     return texture;
 }
 
@@ -183,12 +186,13 @@ string ofxFBXMeshMaterial::getName() {
 //--------------------------------------------------------------
 string ofxFBXMeshMaterial::getInfoAsString() {
     stringstream ss;
-    ss << "-- " << getName() << " Material ----------------------" << endl;
+    ss << "-- " << getName() << " Material enabled: " << isEnabled() << " material enabled: " << areMaterialsEnabled() << " ----------------------" << endl;
     ss << "emissive = " << getEmissiveColor() << endl;
     ss << "ambient = " << getAmbientColor() << endl;
     ss << "diffuse = " << getDiffuseColor() << endl;
     ss << "specular = " << getSpecularColor() << endl;
     ss << "shininess = " << getShininess() << endl;
+    ss << "texture = " << _textureName << " enabled: " << areTexturesEnabled() << " has texture: " << hasTexture() << endl;
     
     return ss.str();
 }
@@ -223,11 +227,12 @@ bool ofxFBXMeshMaterial::findTextureForProperty(const FbxSurfaceMaterial * pMate
     if (lProperty.IsValid()) {
         const int lTextureCount     = lProperty.GetSrcObjectCount<FbxFileTexture>();
         const int lLTextureCount    = lProperty.GetSrcObjectCount<FbxLayeredTexture>();
-//        cout << pPropertyName << " is a valid property with texture count of " << lTextureCount << " layered texture = " << lLTextureCount << endl;
+        ofLogVerbose("ofxFBXMeshMaterial::findTextureForProperty") << pPropertyName << " is a valid property with texture count of " << lTextureCount << " layered texture = " << lLTextureCount;
         if (lTextureCount) {
             const FbxFileTexture* lTexture = lProperty.GetSrcObject<FbxFileTexture>();
             if (lTexture && lTexture->GetUserDataPtr()) {
-                texture = static_cast<ofTexture *>( lTexture->GetUserDataPtr() );
+                _textureName = lTexture->GetName();
+                texture = static_cast<ofxFBXTexture *>( lTexture->GetUserDataPtr() );
                 return true;
             }
         }
@@ -236,9 +241,10 @@ bool ofxFBXMeshMaterial::findTextureForProperty(const FbxSurfaceMaterial * pMate
             const FbxLayeredTexture* lLTexture = lProperty.GetSrcObject<FbxLayeredTexture>();
             if( lLTexture ) {
                 const FbxFileTexture* lTexture = lLTexture->GetSrcObject<FbxFileTexture>();
-//                cout << "-------> Layered " << pPropertyName << " layered texture = " << lLTextureCount << endl;
+                ofLogVerbose("ofxFBXMeshMaterial::findTextureForProperty") << "-------> Layered " << pPropertyName << " layered texture = " << lLTextureCount;
                 if (lTexture && lTexture->GetUserDataPtr()) {
-                    texture = static_cast<ofTexture *>( lTexture->GetUserDataPtr() );
+                    _textureName = lTexture->GetName();
+                    texture = static_cast<ofxFBXTexture *>( lTexture->GetUserDataPtr() );
                     return true;
                 }
             }

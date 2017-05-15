@@ -11,14 +11,6 @@
 #include <math.h>
 
 #include <fbxsdk.h>
-//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-//    #include <fbxsdk.h>
-//#endif
-//
-//#include "ofMain.h"
-//    #if defined(TARGET_OSX)
-//#include "fbxsdk.h"
-//#endif
 
 class ofxFBXAnimation {
 public:
@@ -27,7 +19,7 @@ public:
     
     void setup( FbxTime aStartTime, FbxTime aStopTime, FbxTime aFrameTime );
     
-    void update();
+    void update(float aElapsedTimeSeconds=-1);
     
     bool isFrameNew();
     void setSpeed( float aSpeed );
@@ -61,23 +53,24 @@ public:
     
     int getTotalNumFrames();
     
-    string name;
-    int ID;
+    string name = "";
+//    int ID;
+    int index = 0;
     FbxString fbxname;
     
-    unsigned int startTimeMillis, stopTimeMillis, frameTimeMillis;
+    unsigned int startTimeMillis=0, stopTimeMillis=1000, frameTimeMillis=1/30*1000;
     
     FbxTime fbxStartTime, fbxStopTime, fbxCurrentTime, fbxFrameTime;
     
 protected:
-    bool bPlaying;
-    bool bLoop;
-    bool bNewFrame;
-    bool bDone;
-    float _speed;
-    float _framerate;
+    bool bPlaying = true;
+    bool bLoop = true;
+    bool bNewFrame = true;
+    bool bDone = false;
+    float _speed = 1.f;
+    float _framerate = 30;
     
-    int lastUpdateTimeMillis;
+    int lastUpdateTimeMillis = -1;
 };
 
 
