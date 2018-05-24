@@ -112,6 +112,39 @@ void ofApp::draw() {
     }
 }
 
+#ifdef TARGET_OPENGLES
+//--------------------------------------------------------------
+void ofApp::touchDown(ofTouchEventArgs & touch) {
+    
+}
+
+//--------------------------------------------------------------
+void ofApp::touchMoved(ofTouchEventArgs & touch) {
+    
+}
+
+//--------------------------------------------------------------
+void ofApp::touchUp(ofTouchEventArgs & touch) {
+    
+}
+
+//--------------------------------------------------------------
+void ofApp::touchDoubleTap(ofTouchEventArgs & touch) {
+    if(scene.getNumAnimations() > 1) {
+        int newAnimIndex = fbxMan.getCurrentAnimationIndex()+1;
+        if(newAnimIndex > scene.getNumAnimations()-1 ) {
+            newAnimIndex = 0;
+        }
+        fbxMan.setAnimation( newAnimIndex );
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::touchCancelled(ofTouchEventArgs & touch) {
+    
+}
+#else
+
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
     if(scene.getNumAnimations() > 1) {
@@ -183,6 +216,7 @@ void ofApp::gotMessage(ofMessage msg) {
 void ofApp::dragEvent(ofDragInfo dragInfo) {
     
 }
+#endif
 
 
 
