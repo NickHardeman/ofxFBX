@@ -555,7 +555,11 @@ void ofxFBXMesh::draw( ofMesh* aMesh ) {
     
     if(veebs.getIsAllocated()) {
         if(lSubMeshCount > 0) {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+            #ifndef TARGET_OPENGLES
+                // GLES does not support glPolygonMode
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL );
+            #endif            
+            
             veebs.bind();
         }
         for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex) {
@@ -583,7 +587,13 @@ void ofxFBXMesh::draw( ofMesh* aMesh ) {
             const GLsizei lElementCount = subMeshes[lIndex].totalIndices;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veebs.getIndexId() );
 //            cout << "lElementCount = " << lElementCount << " mesh is using indices = " << mesh.hasIndices() << endl;
-            glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
+            
+            #ifdef TARGET_OPENGLES
+                glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, reinterpret_cast<const GLvoid *>(lOffset));
+            #else
+                glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
+            #endif
+            
             if (lMaterialCache ) {
                 lMaterialCache->end();
                 if(bWasUsingTextures) lMaterialCache->enableTextures();
