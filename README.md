@@ -17,6 +17,11 @@ Features include:
 * Individual mesh manipulation
 * Enable and disable rendering of certain assets in the scene
 
+### iOS Notes
+The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will also need to add libiconv.tbd in the Build Phase settings. (see below image.)
+![libiconv](ReadMeImages/libiconv.png)
+
+
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
 Apply any transformations before exporting using ctrl + A. http://wiki.blender.org/index.php/User:Fade/Doc:2.6/Manual/3D_interaction/Transform_Control/Reset_Object_Transformations
