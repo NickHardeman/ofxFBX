@@ -46,7 +46,16 @@ void ofxFBXManager::setup( ofxFBXScene* aScene ) {
     for(int i = 0; i < fbxMeshes.size(); i++ ){
         fbxMeshes[i]->configureMesh( meshes[i] );
         meshTransforms[i].setParent( *this );
-        meshTransforms[i].setTransformMatrix( fbxMeshes[i]->getGlobalTransformMatrix() );
+//        meshTransforms[i].setTransformMatrix( fbxMeshes[i]->getGlobalTransformMatrix() );
+//        setTransformMatrix( meshTransforms[i], fbxMeshes[i]->getGlobalTransformMatrix() );
+//        meshTransforms[i].setGlobalPosition( fbxMeshes[i]->getGlobalPosition() );
+//        meshTransforms[i].setGlobalOrientation( fbxMeshes[i]->getGlobalOrientation() );
+//        meshTransforms[i].setScale( fbxMeshes[i]->getScale() );
+        
+        meshTransforms[i].setPosition( fbxMeshes[i]->getPosition() );
+        meshTransforms[i].setOrientation( fbxMeshes[i]->getOrientationQuat() );
+        meshTransforms[i].setScale( fbxMeshes[i]->getScale() );
+        
     }
     
     aScene->populateSkeletons( skeletons );
@@ -78,7 +87,7 @@ void ofxFBXManager::update(float aElapsedSeconds) {
     
     if( !areAnimationsEnabled() || !hasAnimations() ) {
         FbxTime ttime(FBXSDK_TIME_INFINITE);
-        //cout << "Calling update bones: " << " | " << ofGetElapsedTimef() << endl;
+//        cout << "Calling update bones: " << " | " << ofGetElapsedTimef() << endl;
         for(int i = 0; i < skeletons.size(); i++ ) {
             skeletons[i]->update( ttime, lPose );
         }
@@ -109,7 +118,11 @@ void ofxFBXManager::update(float aElapsedSeconds) {
         } else {
             fbxMeshes[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
         }
-        meshTransforms[i].setTransformMatrix( fbxMeshes[i]->getGlobalTransformMatrix() );
+//        meshTransforms[i].setTransformMatrix( fbxMeshes[i]->getGlobalTransformMatrix() );
+//        setTransformMatrix( meshTransforms[i], fbxMeshes[i]->getGlobalTransformMatrix() );
+        meshTransforms[i].setPosition( fbxMeshes[i]->getPosition() );
+        meshTransforms[i].setOrientation( fbxMeshes[i]->getOrientationQuat() );
+        meshTransforms[i].setScale( fbxMeshes[i]->getScale() );
     }
     
     for( auto& skel : skeletons ) {
@@ -169,9 +182,9 @@ void ofxFBXManager::drawMesh(int aindex) {
 		return;
 	}
 	vector< shared_ptr<ofxFBXMesh> >& fbxMeshes = fbxScene->getMeshes();
-	meshTransforms[aindex].transformGL();
+    meshTransforms[aindex].transformGL();
 	fbxMeshes[aindex]->draw(&meshes[aindex]);
-	meshTransforms[aindex].restoreTransformGL();
+    meshTransforms[aindex].restoreTransformGL();
 }
 
 //--------------------------------------------------------------
@@ -221,6 +234,21 @@ void ofxFBXManager::drawSkeletons( float aLen, bool aBDrawAxes ) {
         skeletons[i]->draw( aLen, aBDrawAxes );
     }
 }
+
+//--------------------------------------------------------------
+//void ofxFBXManager::setTransformMatrix(ofNode& anode, const glm::mat4& amat ) {
+//    glm::vec3 scale;
+//    glm::quat rotation;
+//    glm::vec3 translation;
+//    glm::vec3 skew;
+//    glm::vec4 perspective;
+//
+//    glm::decompose(amat, scale, rotation, translation, skew, perspective);
+//
+//    anode.setPosition( translation );
+//    anode.setOrientation( rotation );
+//    anode.setScale( scale );
+//}
 
 //--------------------------------------------------------------
 vector< ofMesh >& ofxFBXManager::getMeshes() {

@@ -11,6 +11,7 @@
 #include "ofMain.h"
 #include <fbxsdk.h>
 #include "ofxFBXUtils.h"
+#include "glm/gtx/matrix_decompose.hpp"
 
 template<class T>
 struct ofxFBXKey {
@@ -55,12 +56,23 @@ public:
         return mKeyCollections[aAnimIndex];
     }
     
-protected:
-    ofQuaternion origLocalRotation, origGlobalRotation;
-    ofMatrix4x4 origGlobalTransform;
-    ofMatrix4x4 origLocalTransform;
+    void setLocalTransformMatrix( FbxAMatrix ainput ) {
+        glm::vec3 tpos, tscale;
+        glm::quat trot;
+        
+        fbxToGlmComponents( ainput, tpos, trot, tscale );
+        
+        setScale( tscale );
+        setPosition( tpos );
+        setOrientation( trot);
+    }
     
-    ofVec3f origPos, origScale;
+protected:
+    glm::quat origLocalRotation, origGlobalRotation;
+    glm::mat4 origGlobalTransform;
+    glm::mat4 origLocalTransform;
+    
+    glm::vec3 origPos, origScale;
     
     string name = "";
     int mAnimIndex = 0;

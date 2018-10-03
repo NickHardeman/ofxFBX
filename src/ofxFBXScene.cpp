@@ -456,8 +456,12 @@ void ofxFBXScene::populateMeshesRecursive( FbxNode* pNode, FbxAnimLayer* pAnimLa
                 
                 FbxAMatrix lGlobalPosition = GetGlobalPosition(pNode, FBXSDK_TIME_INFINITE, NULL );
                 
-                ofMatrix4x4 ofgpos = toOf(lGlobalPosition);
-                mesh->setTransformMatrix( ofgpos );
+//                glm::mat4 ofgpos = fbxToOf(lGlobalPosition);
+//                mesh->setTransformMatrix( ofgpos );
+//                mesh->setTransformMatrix(lGlobalPosition);
+//                mesh->cacheStartTransforms();
+//                mesh->setGlobalTransformMatrix(lGlobalPosition);
+                mesh->setLocalTransformMatrix(lGlobalPosition);
                 mesh->cacheStartTransforms();
                 
                 // Associtate the clusters with some user data so that we can move them around //
@@ -527,8 +531,9 @@ void ofxFBXScene::parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeleto
                         ofxFBXBone* bonePtrParent   = static_cast<ofxFBXBone *>(pNode->GetParent()->GetUserDataPtr());
                         bonePtr->parentBoneName     = bonePtrParent->getName();
                         bonePtr->setParent( *bonePtrParent, true );
-                        bonePtr->setScale( 1.f );
+//                        bonePtr->setScale( 1.f );
 //                        bonePtr->level = aBoneLevel;
+                        
                         
 //                        if( bonePtrParent ) {
 //                            bonePtrParent->bones.push_back( shared_ptr< ofxFBXBone >( new ofxFBXBone( *bonePtr )));
@@ -536,10 +541,23 @@ void ofxFBXScene::parentBonesRecursive( FbxNode* pNode, list<FbxNode*>& aSkeleto
 //                        bonePtr->setGlobalPosition( bonePtr->origNode.getGlobalPosition() );
 //                        bonePtr->setGlobalOrientation( bonePtr->origNode.getGlobalOrientation() );
 //                        origNode.setTransformMatrix( ofGetGlobalTransform( fbxNode, FBXSDK_TIME_INFINITE, NULL ) );
-                        ofNode tnode;
-                        tnode.setTransformMatrix( ofGetGlobalTransform( bonePtr->fbxNode, FBXSDK_TIME_INFINITE, NULL ));
-                        bonePtr->setGlobalPosition( tnode.getGlobalPosition() );
-                        bonePtr->setGlobalOrientation( tnode.getGlobalOrientation() );
+//                        ofNode tnode;
+//                        tnode.setTransformMatrix( ofGetGlobalTransform( bonePtr->fbxNode, FBXSDK_TIME_INFINITE, NULL ));
+//                        glm::mat4 bmat = ofGetGlobalTransform( bonePtr->fbxNode, FBXSDK_TIME_INFINITE, NULL );
+//                        bonePtr->setTransformMatrix( bmat );
+//                        bonePtr->setTransformMatrix( ofFbxGetGlobalTransform( bonePtr->fbxNode, FBXSDK_TIME_INFINITE, NULL ));
+//                        bonePtr->setGlobalTransformMatrix( GetGlobalPosition(pNode, FBXSDK_TIME_INFINITE, NULL ) );
+                        bonePtr->setLocalTransformMatrix( GetGlobalPosition(pNode, FBXSDK_TIME_INFINITE, NULL ) );
+//                        glm::vec3 scale;
+//                        glm::quat rotation;
+//                        glm::vec3 translation;
+//                        glm::vec3 skew;
+//                        glm::vec4 perspective;
+//                        
+//                        glm::decompose(bmat, scale, rotation, translation, skew, perspective);
+//                        bonePtr->setScale(scale);
+//                        bonePtr->setGlobalPosition( translation );
+//                        bonePtr->setGlobalOrientation( rotation );
                         bonePtr->cacheStartTransforms();
                         
 //                        cout << "parentBonesRecursive :: " << bonePtr->getName() << " num character link count = " <<  pNode->GetCharacterLinkCount() << endl;;
@@ -670,20 +688,27 @@ void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, i
         for( int i = 0; i < tanim.getTotalNumFrames(); i++ ) {
             tanim.setFrame(i);
             // now get the information //
-            ofMatrix4x4 tmat;
+            glm::mat4 tmat;
 //            if( pNode->GetParent() ) {
             if( !bGrabGlobalTransform ) {
                 //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
                 FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( tanim.fbxCurrentTime );
-                tmat = ( toOf(tmatrix) );
+                tmat = ( fbxToOf(tmatrix) );
             } else { 
                 FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( tanim.fbxCurrentTime );
-                tmat = ( toOf(tmatrix) );
+                tmat = ( fbxToOf(tmatrix) );
             }
-            ofVec3f tpos;
-            ofVec3f tscale;
-            ofQuaternion tquat, so;
-            tmat.decompose( tpos, tquat, tscale, so );
+//            ofVec3f tpos;
+//            ofVec3f tscale;
+//            ofQuaternion tquat, so;
+//            tmat.decompose( tpos, tquat, tscale, so );
+            glm::vec3 tscale;
+            glm::quat tquat;
+            glm::vec3 tpos;
+            glm::vec3 skew;
+            glm::vec4 perspective;
+            
+            glm::decompose(tmat, tscale, tquat, tpos, skew, perspective);
             
             ofxFBXKey<float> tkeyPosX;
             tkeyPosX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
@@ -763,19 +788,28 @@ void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, i
                     mTimeCount[lKeyTime.GetMilliSeconds()] += 1;
                     
                     ofxFBXKey<ofQuaternion> tkey;
-                    ofMatrix4x4 tOfMat;
+                    glm::mat4 tOfMat;
                     if( pNode->GetParent() ) {
                         FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( lKeyTime );
-                        tOfMat = toOf( tmatrix );
+                        tOfMat = fbxToOf( tmatrix );
                     } else {
                         FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( lKeyTime );
-                        tOfMat = toOf( tmatrix );
+                        tOfMat = fbxToOf( tmatrix );
                     }
                     
-                    ofVec3f t,s;
-                    ofQuaternion so;
+                    glm::vec3 scale;
+                    glm::quat rotation;
+                    glm::vec3 translation;
+                    glm::vec3 skew;
+                    glm::vec4 perspective;
                     
-                    tOfMat.decompose( t, tkey.value, s, so);
+                    glm::decompose(tOfMat, scale, rotation, translation, skew, perspective);
+                    
+                    tkey.value = rotation;
+//                    ofVec3f t,s;
+//                    ofQuaternion so;
+//
+//                    tOfMat.decompose( t, tkey.value, s, so);
                     
                     tkey.millis = lKeyTime.GetMilliSeconds();
                     newRotKeys.push_back( tkey );

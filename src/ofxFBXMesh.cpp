@@ -91,7 +91,7 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
         int faceSize = fbxMesh->GetPolygonSize( lPolygonIndex );
         for( int lVerticeIndex = 0; lVerticeIndex < faceSize; lVerticeIndex++ ) {
             const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
-            mesh.getVertices()[ lControlPointIndex ].set(lControlPoints[lControlPointIndex][0],
+            mesh.getVertices()[ lControlPointIndex ] = glm::vec3(lControlPoints[lControlPointIndex][0],
                                                          lControlPoints[lControlPointIndex][1],
                                                          lControlPoints[lControlPointIndex][2] );
             mesh.addIndex( lControlPointIndex );
@@ -120,7 +120,7 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
                     lNormalIndex = lNormalElement->GetIndexArray().GetAt(i);
                 }
                 lCurrentNormal = lNormalElement->GetDirectArray().GetAt(lNormalIndex);
-                mesh.getNormals()[i].set( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
+                mesh.getNormals()[i] = glm::vec3( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
             }
         } else if( mNormalMappingMode == FbxGeometryElement::eByPolygonVertex ) {
             for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
@@ -128,7 +128,7 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
                 for( int lVerticeIndex = 0; lVerticeIndex < faceSize; lVerticeIndex++ ) {
                     const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
                     if(fbxMesh->GetPolygonVertexNormal( lPolygonIndex, lVerticeIndex, lCurrentNormal )) {
-                        mesh.getNormals()[ lControlPointIndex ].set( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
+                        mesh.getNormals()[ lControlPointIndex ] = glm::vec3( lCurrentNormal[0], lCurrentNormal[1], lCurrentNormal[2] );
                     }
                 }
             }
@@ -175,7 +175,7 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
                     //the UV index depends on the reference mode
                     int lUVIndex = lUseIndex ? lUVElement->GetIndexArray().GetAt(lPolyVertIndex) : lPolyVertIndex;
                     lUVValue = lUVElement->GetDirectArray().GetAt(lUVIndex);
-                    mesh.getTexCoords()[ lPolyVertIndex ].set( lUVValue[0], lUVValue[1] );
+                    mesh.getTexCoords()[ lPolyVertIndex ] = glm::vec2( lUVValue[0], lUVValue[1] );
                 }
             }
         } else if (lUVElement->GetMappingMode() == FbxGeometryElement::eByPolygonVertex) {
@@ -199,7 +199,7 @@ void ofxFBXMesh::setFBXMesh( FbxMesh* lMesh ) {
                     //Got normals of each polygon-vertex.
                     lUVValue = lUVElement->GetDirectArray().GetAt(lNormalIndex);
                     const int lControlPointIndex = fbxMesh->GetPolygonVertex( lPolygonIndex, i );
-                    mesh.getTexCoords()[ lControlPointIndex ].set( lUVValue[0], lUVValue[1] );
+                    mesh.getTexCoords()[ lControlPointIndex ] = glm::vec2( lUVValue[0], lUVValue[1] );
                     
                     lIndexByPolygonVertex++;
                 }//end for i //lPolygonSize
@@ -392,8 +392,11 @@ void ofxFBXMesh::configureMesh( ofMesh& aMesh ) {
 //--------------------------------------------------------------
 void ofxFBXMesh::update( FbxTime& pTime, FbxPose* pPose ) {
     FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, NULL );
-    ofMatrix4x4 ofgpos = toOf(lGlobalPosition);
-    setTransformMatrix( ofgpos );
+//    FbxAMatrix lGlobalPosition = GetLocalPosition( fbxMesh->GetNode(), pTime, NULL );
+    setLocalTransformMatrix(lGlobalPosition);
+//    setTransformMatrix(lGlobalPosition);
+//    glm::mat4 ofgpos = fbxToOf(lGlobalPosition);
+//    setTransformMatrix( ofgpos );
 }
 
 //--------------------------------------------------------------
@@ -451,21 +454,21 @@ void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnim
 //    cout << "Calling update mesh lHasShape = " << lHasShape << " skin = " << lHasSkin << " lHasDeformation = " << lHasDeformation << endl;
     
     
-    vector< ofVec3f >& amverts      = aMesh->getVertices();
-    vector< ofVec3f >& amnormals    = aMesh->getNormals();
+    vector< glm::vec3 >& amverts      = aMesh->getVertices();
+    vector< glm::vec3 >& amnormals    = aMesh->getNormals();
     
     bool bUpdateNormals = lNormalArray != NULL && amnormals.size() > 1;
     
     const int controlPointCount = fbxMesh->GetControlPointsCount();
     // update the vertices //
     for(int i = 0; i < controlPointCount; i++ ) {
-        amverts[i].set( lVertexArray[i][0], lVertexArray[i][1], lVertexArray[i][2] );
+        amverts[i] = glm::vec3( lVertexArray[i][0], lVertexArray[i][1], lVertexArray[i][2] );
     }
     
     if( bUpdateNormals ) {
         if( mNormalMappingMode == FbxGeometryElement::eByControlPoint ) {
             for(int i = 0; i < controlPointCount; i++ ) {
-                amnormals[i].set( lNormalArray[i][0], lNormalArray[i][1], lNormalArray[i][2] );
+                amnormals[i] = glm::vec3( lNormalArray[i][0], lNormalArray[i][1], lNormalArray[i][2] );
 //                amnormals[i].normalize();
             }
         } else if( mNormalMappingMode == FbxGeometryElement::eByPolygonVertex ) {
@@ -481,7 +484,7 @@ void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnim
 //                                                    lVertexArray[lControlPointIndex][1],
 //                                                    lVertexArray[lControlPointIndex][2]);
 //                    if( bUpdateNormals ) {
-                        amnormals[lControlPointIndex].set(lNormalArray[ lControlPointIndex ][0],
+                        amnormals[lControlPointIndex] = glm::vec3(lNormalArray[ lControlPointIndex ][0],
                                                           lNormalArray[ lControlPointIndex ][1],
                                                           lNormalArray[ lControlPointIndex ][2] );
 //                        amnormals[lControlPointIndex].normalize();
@@ -609,10 +612,10 @@ void ofxFBXMesh::drawNormals( ofMesh* aMesh, float length, bool bFaceNormals ) {
 //    transformGL();
     
     if( aMesh->usingNormals()) {
-        vector<ofVec3f>& normals    = aMesh->getNormals();
-        vector<ofVec3f>& vertices   = aMesh->getVertices();
-        ofVec3f normal;
-        ofVec3f vert;
+        vector<glm::vec3>& normals    = aMesh->getNormals();
+        vector<glm::vec3>& vertices   = aMesh->getVertices();
+        glm::vec3 normal;
+        glm::vec3 vert;
         
         // super inefficient, for debug only //
         ofMesh normalsMesh;
@@ -629,14 +632,14 @@ void ofxFBXMesh::drawNormals( ofMesh* aMesh, float length, bool bFaceNormals ) {
                     vert = (vertices[i-2]+vertices[i-1]+vertices[i]) / 3;
                 }
                 normalsMesh.setVertex(i*2, vert);
-                normal = normals[i].getNormalized();
+                normal = glm::normalize(normals[i]);
                 normal *= length;
                 normalsMesh.setVertex(i*2+1, normal+vert);
             }
         } else {
             for(int i = 0; i < (int)normals.size(); i++) {
                 vert = vertices[i];
-                normal = normals[i].getNormalized();
+                normal = glm::normalize(normals[i]);
                 normalsMesh.setVertex( i*2, vert);
                 normal *= length;
                 normalsMesh.setVertex(i*2+1, normal+vert);
@@ -767,7 +770,8 @@ void ofxFBXMesh::computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer
 //                    cout << "updateMesh : weight = " << lWeight << endl;
                     for (int j = 0; j < aMesh->getNumVertices(); j++) {
                         // Add the influence of the shape vertex to the mesh vertex.
-                        ofVec3f influence = (toOf(lEndShape->GetControlPoints()[j]) - original.getVertices()[j]) * lWeight;
+                        glm::vec3 ov = original.getVertices()[j];
+                        glm::vec3 influence = ((fbxToOf(lEndShape->GetControlPoints()[j]) - glm::vec4(ov.x, ov.y, ov.z, 0.0)) * lWeight);
                         aMesh->getVertices()[j] += influence;
                     }
                     
@@ -780,7 +784,7 @@ void ofxFBXMesh::computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer
                     //					lWeight = ((lWeight-lStartWeight)/(lEndWeight-lStartWeight)) * 100;
                     for (int j = 0; j < aMesh->getNumVertices(); j++) {
                         // Add the influence of the shape vertex to the mesh vertex.
-                        ofVec3f influence = (toOf(lEndShape->GetControlPoints()[j] - lStartShape->GetControlPoints()[j] )) * lWeight;
+                        ofVec3f influence = (fbxToOf(lEndShape->GetControlPoints()[j] - lStartShape->GetControlPoints()[j] )) * lWeight;
                         aMesh->getVertices()[j] += influence;
                     }
                 }
@@ -1132,8 +1136,11 @@ void ofxFBXMesh::computeClusterDeformation(FbxAMatrix& pGlobalPosition,
     if( bone != NULL && cluster != NULL ) {
 //        cout << "computeClusterDeformation: bone != NULL && cluster != NULL " << bone->getName() << endl;
 //        cout << "We have cached cluster and bone! " << bone->getName() << endl;
+//        pVertexTransformMatrix = cluster->preTrans * bone->fbxTransform * cluster->postTrans;
+//        pVertexTransformMatrix = cluster->preTrans * bone->fbxTransform * cluster->postTrans;
         pVertexTransformMatrix = cluster->preTrans * bone->fbxTransform * cluster->postTrans;
         if( bNormal ) {
+//            cout << "We have cached cluster andNORMAL bone! " << bone->getName() << endl;
             pVertexTransformMatrix = pVertexTransformMatrix.Inverse();
             pVertexTransformMatrix = pVertexTransformMatrix.Transpose();
         }

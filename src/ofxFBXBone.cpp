@@ -7,6 +7,7 @@
 //
 
 #include "ofxFBXBone.h"
+#include "ofxFBXUtils.h"
 
 //--------------------------------------------------------------
 ofxFBXBone::ofxFBXBone() {
@@ -44,7 +45,8 @@ void ofxFBXBone::setup( FbxNode* pNode ) {
     ofxFBXNode::setup( pNode );
     fbxNode = pNode;
     
-    setTransformMatrix( ofGetGlobalTransform( fbxNode, FBXSDK_TIME_INFINITE, NULL ) );
+//    setTransformMatrix( ofGetGlobalTransform( fbxNode, FBXSDK_TIME_INFINITE, NULL ) );
+    setLocalTransformMatrix( ofFbxGetGlobalTransform( fbxNode, FBXSDK_TIME_INFINITE, NULL ) );
     bExists = true;
     
     updateFbxTransform();
@@ -72,12 +74,18 @@ void ofxFBXBone::update( FbxTime& pTime, FbxPose* pPose ) {
     
     if( isAnimationEnabled() ) {
         if( !bIsRoot ) {
-            //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
+//            setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
             FbxAMatrix& tmatrix = fbxNode->EvaluateLocalTransform( pTime );
-            setTransformMatrix( toOf(tmatrix) );
+//            setTransformMatrix( fbxToOf(tmatrix) );
+//            setTransformMatrix(tmatrix);
+            setLocalTransformMatrix(tmatrix);
+//            setGlobalTransformMatrix(tmatrix);
         } else {
             FbxAMatrix& tmatrix = fbxNode->EvaluateGlobalTransform( pTime );
-            setTransformMatrix( toOf(tmatrix) );
+//            setTransformMatrix(tmatrix);
+            setLocalTransformMatrix(tmatrix);
+//            setTransformMatrix( fbxToOf(tmatrix) );
+            
 //            setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
             //FbxAMatrix& tmatrix = fbxNode->EvaluateLocalTransform( pTime );
             //setTransformMatrix( toOf(tmatrix) );
@@ -106,7 +114,16 @@ void ofxFBXBone::update( int aAnimIndex, signed long aMillis ) {
 void ofxFBXBone::lateUpdate() {
     ofxFBXBone* sbone   = sourceBone;
     if( sbone != NULL ) {
-        sbone->setTransformMatrix( getLocalTransformMatrix() );
+        sbone->setPosition( getPosition() );
+        sbone->setOrientation( getOrientationQuat() );
+        sbone->setScale( getScale() );
+//        sbone->setGlobalPosition( getGlobalPosition() );
+//        sbone->setGlobalOrientation( getGlobalOrientation() );
+//        sbone->setScale( getScale() );
+//        sbone->setGlobalSca( getGlobalScale() );
+        
+//        sbone->setTransformMatrix( getLocalTransformMatrix() );
+//        sbone->setTransformMatrix( getGlobalTransformMatrix() );
         sbone->updateFbxTransform();
     }
 
@@ -127,7 +144,7 @@ void ofxFBXBone::draw( float aLen, bool aBDrawAxes ) {
 //    if(!isLimb()) return;
     if( getParent() != NULL && !bIsRoot ) {
         //ofSetColor(255, 0, 130 );
-        ofVec3f ppos = getParent()->getGlobalPosition();
+        glm::vec3 ppos = getParent()->getGlobalPosition();
         ofDrawLine( ppos, getGlobalPosition() );
     }
     
@@ -139,32 +156,37 @@ void ofxFBXBone::draw( float aLen, bool aBDrawAxes ) {
 
 //--------------------------------------------------------------
 void ofxFBXBone::updateFbxTransform() {
-    fbxTransform = toFbx( getGlobalTransformMatrix() );
+    // we need to convert this back before sending //
+    fbxTransform = toFbx( getGlobalPosition(), getGlobalOrientation(), getGlobalScale() );
 }
 
 //--------------------------------------------------------------
-void ofxFBXBone::updateFbxTransformLocal() {
-    if(getParent() != NULL ) {
-        fbxTransform = toFbx( getGlobalTransformMatrix() * ofMatrix4x4::getInverseOf( getParent()->getGlobalTransformMatrix() ) );
-    } else {
-        updateFbxTransform();
-    }
-}
-
-//--------------------------------------------------------------
-void ofxFBXBone::pointTo( ofVec3f aTarget ) {
-    ofVec3f axis( 1, 0, 0 );
+void ofxFBXBone::pointTo( glm::vec3 aTarget ) {
+    glm::vec3 axis( 1, 0, 0 );
     pointTo( aTarget, axis );
 }
 
 //--------------------------------------------------------------
-void ofxFBXBone::pointTo( ofVec3f aTarget, ofVec3f aAxis ) {
-    ofVec3f diff = aTarget - getGlobalPosition();
-    diff.normalize();
-    ofQuaternion tquat;
-    ofVec3f txaxis = aAxis * origGlobalTransform.getRotate();
-    tquat.makeRotate( txaxis, diff );
-    setGlobalOrientation( origGlobalRotation * tquat );
+void ofxFBXBone::pointTo( glm::vec3 aTarget, glm::vec3 aAxis ) {
+    
+    // TODO: FIX 
+//    ofVec3f diff = aTarget - getGlobalPosition();
+//    diff.normalize();
+//    ofQuaternion tquat;
+//    ofVec3f txaxis = aAxis * origGlobalTransform.getRotate();
+//    tquat.makeRotate( txaxis, diff );
+//    setGlobalOrientation( origGlobalRotation * tquat );
+
+    auto relPosition = (getGlobalPosition() - aTarget);
+    auto radius = glm::length(relPosition);
+    if(radius>0){
+        float latitude = acos(relPosition.y / radius) - glm::half_pi<float>();
+        float longitude = atan2(relPosition.x , relPosition.z);
+        glm::quat q = glm::angleAxis(latitude, glm::vec3(1,0,0)) * glm::angleAxis(longitude, glm::vec3(0,1,0)) * glm::angleAxis(0.f, glm::vec3(0,0,1));
+        setGlobalOrientation(q);
+    }
+    
+
 }
 
 //--------------------------------------------------------------
@@ -217,7 +239,7 @@ bool ofxFBXBone::isAnimationEnabled() {
 }
 
 //--------------------------------------------------------------
-ofQuaternion& ofxFBXBone::getOriginalLocalRotation() {
+glm::quat& ofxFBXBone::getOriginalLocalRotation() {
     return origLocalRotation;
 }
 

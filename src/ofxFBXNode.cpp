@@ -12,7 +12,7 @@
 ofxFBXNode::ofxFBXNode() {
 //    parent          = NULL;
 //    globalParent    = NULL;
-    origScale.set(1,1,1);
+    origScale = glm::vec3(1,1,1);
 }
 
 //----------------------------------------

@@ -26,6 +26,7 @@ public:
     void drawMeshNormals( float aLen = 4.f, bool aBFaceNormals = true );
     void drawSkeletons( float aLen = 10.f, bool aBDrawAxes = true );
     
+//    void setTransformMatrix(ofNode& anode, const glm::mat4& amat );
     vector< ofMesh >& getMeshes();
     int getNumMeshes();
     string getMeshName( int aMeshIndex );

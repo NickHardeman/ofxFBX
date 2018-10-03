@@ -8,55 +8,89 @@
 
 #pragma once
 #define FBXSDK_NEW_API
-//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-//    #include <fbxsdk.h>
-//#endif
-//
-//#if defined(TARGET_OSX)
-//    #include "fbxsdk.h"
-//#endif
+
 #include "ofMain.h"
 #include <fbxsdk.h>
 #include "GetPosition.h"
+#include "glm/gtx/matrix_decompose.hpp"
 
 // --- from Arturo Castro's ofxFBX -------
-inline ofVec4f toOf(const FbxVector4 & vec4){
-	return ofVec4f(vec4[0],vec4[1],vec4[2],vec4[3]);
+inline glm::vec4 fbxToOf(const FbxVector4 & avec4){
+	return glm::vec4(avec4[0],avec4[1],avec4[2],avec4[3]);
 }
 
 // -----------------------------------
-inline FbxVector4 toFbx(const ofVec4f & vec4){
-	return FbxVector4(vec4.x,vec4.y,vec4.z,vec4.w);
+inline FbxVector4 toFbx(const glm::vec4 & avec4){
+	return FbxVector4(avec4.x,avec4.y,avec4.z,avec4.w);
+}
+
+//// -----------------------------------
+inline glm::mat4 fbxToOf(const FbxAMatrix & ainput){
+    glm::mat4 m;
+    for(int i=0;i<4;i++){
+        m[i] = fbxToOf(ainput.GetRow(i));
+    }
+    return m;
 }
 
 // -----------------------------------
-inline ofMatrix4x4 toOf(const FbxAMatrix & matrix){
-	ofMatrix4x4 m;
-	for(int i=0;i<4;i++){
-		m._mat[i] = toOf(matrix.GetRow(i));
-	}
-	return m;
+inline void fbxToGlmComponents( FbxAMatrix& ainput, glm::vec3& apos, glm::quat& aquat, glm::vec3& ascale ) {
+    
+    glm::vec3 tscale(ainput.GetS()[0], ainput.GetS()[1], ainput.GetS()[2]);
+    glm::vec3 tpos(ainput.GetT()[0], ainput.GetT()[1], ainput.GetT()[2]);
+    glm::quat trot( ainput.GetQ()[0], ainput.GetQ()[1], ainput.GetQ()[2], ainput.GetQ()[3] );
+    
+    FbxVector4 euler;// = ainput.GetQ().DecomposeSphericalXYZ();//ainput.GetR();
+    euler = ainput.GetR();
+    float ix = -1.f;//ofGetKeyPressed('1') ? 1.f : -1.f;
+    float iy = -1.f;//ofGetKeyPressed('2') ? 1.f : -1.f;
+    float iz = -1.f;//ofGetKeyPressed('3') ? 1.f : -1.f;
+    trot = toQuat(glm::eulerAngleXYZ(glm::radians(euler[0]) * ix,
+                                     glm::radians(euler[1]) * iy,
+                                     glm::radians(euler[2]) * iz));
+    
+    
+    ascale = tscale;
+    apos = ( tpos );
+    aquat = ( glm::conjugate(trot) );
 }
 
 // -----------------------------------
-inline FbxAMatrix toFbx(const ofMatrix4x4& matrix){
-	FbxAMatrix m;
-	for(int i=0;i<4;i++){
-        m.SetRow(i, toFbx( matrix.getRowAsVec4f(i)) );
-	}
-	return m;
+inline FbxAMatrix convertGlmToFbx( glm::vec3& apos, glm::quat& aquat, glm::vec3& ascale ) {
+    FbxAMatrix fm;
+    
+    FbxVector4 tscale( ascale.x, ascale.y, ascale.z, 0.0 );
+    FbxVector4 tpos( apos.x, apos.y, apos.z, 1.0 );
+    FbxVector4 trot;
+    
+    glm::quat adjquat = glm::normalize(aquat);
+    glm::vec3 euler = glm::eulerAngles(adjquat);
+    
+    trot.Set( glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z), 1.0 );
+    fm.SetTRS( tpos, trot, tscale );
+    return fm;
 }
-
 
 // -----------------------------------
-inline ofMatrix4x4 ofGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
-    return toOf( GetGlobalPosition( pNode, pTime, pPose, pParentGlobalPosition) );
+inline FbxAMatrix toFbx( glm::vec3 apos, glm::quat arot, glm::vec3 ascale ) {
+    return convertGlmToFbx(apos, arot, ascale);
 }
 
 // -----------------------------------
-inline ofMatrix4x4 ofGetLocalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
-    return toOf( GetLocalPositionForNode( pNode, pTime, pPose, pParentGlobalPosition) );
+inline FbxAMatrix ofFbxGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
+    return GetGlobalPosition( pNode, pTime, pPose, pParentGlobalPosition);
 }
+
+// -----------------------------------
+inline glm::mat4 ofGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
+    return fbxToOf( GetGlobalPosition( pNode, pTime, pPose, pParentGlobalPosition) );
+}
+
+// -----------------------------------
+inline glm::mat4 ofGetLocalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
+    return fbxToOf( GetLocalPositionForNode( pNode, pTime, pPose, pParentGlobalPosition) );
+}
+
 
 
 

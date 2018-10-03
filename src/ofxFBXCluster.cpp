@@ -34,6 +34,7 @@ void ofxFBXCluster::setup(FbxAMatrix& pGlobalPosition,
     origTransform = lClusterGlobalCurrentPosition;
     
     FbxCluster::ELinkMode lClusterMode = pCluster->GetLinkMode();
+    
     if (lClusterMode == FbxCluster::eAdditive && pCluster->GetAssociateModel()) {
         pCluster->GetTransformAssociateModelMatrix(lAssociateGlobalInitPosition);
         // Geometric transform of the model
@@ -67,7 +68,8 @@ void ofxFBXCluster::setup(FbxAMatrix& pGlobalPosition,
 		lReferenceGlobalCurrentPosition = pGlobalPosition;
 		// Multiply lReferenceGlobalInitPosition by Geometric Transformation
 		lReferenceGeometry = GetGeometry(pMesh->GetNode());
-		lReferenceGlobalInitPosition *= lReferenceGeometry;
+//        lReferenceGlobalInitPosition = lReferenceGeometry * lReferenceGlobalInitPosition;
+        lReferenceGlobalInitPosition *= lReferenceGeometry;
         
 		// Get the link initial global position and the link current global position.
 		pCluster->GetTransformLinkMatrix(lClusterGlobalInitPosition);
@@ -82,6 +84,12 @@ void ofxFBXCluster::setup(FbxAMatrix& pGlobalPosition,
         
         preTrans    = lReferenceGlobalCurrentPosition.Inverse();
         postTrans   = lClusterGlobalInitPosition.Inverse() * lReferenceGlobalInitPosition;
+        
+//        preTrans    = lReferenceGlobalCurrentPosition;//.Inverse();
+//        postTrans   = lReferenceGlobalInitPosition.Inverse() * lClusterGlobalInitPosition;
+        
+//        postTrans = lReferenceGlobalCurrentPosition.Inverse();
+//        preTrans   = lReferenceGlobalInitPosition.Inverse() * lClusterGlobalInitPosition;
         
 		// Compute the shift of the link relative to the reference.
 //		vertexTransformMatrix = lClusterRelativeCurrentPositionInverse * lClusterRelativeInitPosition;
