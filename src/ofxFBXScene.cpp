@@ -688,27 +688,23 @@ void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, i
         for( int i = 0; i < tanim.getTotalNumFrames(); i++ ) {
             tanim.setFrame(i);
             // now get the information //
-            glm::mat4 tmat;
+            //glm::mat4 tmat;
+
+			glm::vec3 tpos, tscale;
+			glm::quat tquat;
+			//fbxToGlmComponents(FbxAMatrix& ainput, glm::vec3& apos, glm::quat& aquat, glm::vec3& ascale)
+
 //            if( pNode->GetParent() ) {
             if( !bGrabGlobalTransform ) {
                 //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
                 FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( tanim.fbxCurrentTime );
-                tmat = ( fbxToOf(tmatrix) );
+                //tmat = ( fbxToOf(tmatrix) );
+				fbxToGlmComponents(tmatrix, tpos, tquat, tscale);
             } else { 
                 FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( tanim.fbxCurrentTime );
-                tmat = ( fbxToOf(tmatrix) );
+               // tmat = ( fbxToOf(tmatrix) );
+				fbxToGlmComponents(tmatrix, tpos, tquat, tscale);
             }
-//            ofVec3f tpos;
-//            ofVec3f tscale;
-//            ofQuaternion tquat, so;
-//            tmat.decompose( tpos, tquat, tscale, so );
-            glm::vec3 tscale;
-            glm::quat tquat;
-            glm::vec3 tpos;
-            glm::vec3 skew;
-            glm::vec4 perspective;
-            
-            glm::decompose(tmat, tscale, tquat, tpos, skew, perspective);
             
             ofxFBXKey<float> tkeyPosX;
             tkeyPosX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
@@ -788,22 +784,26 @@ void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, i
                     mTimeCount[lKeyTime.GetMilliSeconds()] += 1;
                     
                     ofxFBXKey<ofQuaternion> tkey;
-                    glm::mat4 tOfMat;
+                    //glm::mat4 tOfMat;
+					glm::vec3 translation, scale;
+					glm::quat rotation;
                     if( pNode->GetParent() ) {
                         FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( lKeyTime );
-                        tOfMat = fbxToOf( tmatrix );
+                        //tOfMat = fbxToOf( tmatrix );
+						fbxToGlmComponents(tmatrix, translation, rotation, scale);
                     } else {
                         FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( lKeyTime );
-                        tOfMat = fbxToOf( tmatrix );
+                        //tOfMat = fbxToOf( tmatrix );
+						fbxToGlmComponents(tmatrix, translation, rotation, scale);
                     }
                     
-                    glm::vec3 scale;
-                    glm::quat rotation;
-                    glm::vec3 translation;
-                    glm::vec3 skew;
-                    glm::vec4 perspective;
+                    //glm::vec3 scale;
+                   // glm::quat rotation;
+                   // glm::vec3 translation;
+                    //glm::vec3 skew;
+                    //glm::vec4 perspective;
                     
-                    glm::decompose(tOfMat, scale, rotation, translation, skew, perspective);
+                    //glm::decompose(tOfMat, scale, rotation, translation, skew, perspective);
                     
                     tkey.value = rotation;
 //                    ofVec3f t,s;

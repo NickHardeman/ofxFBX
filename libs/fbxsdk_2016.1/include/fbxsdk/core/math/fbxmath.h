@@ -30,7 +30,7 @@
 
 #if defined(FBXSDK_ENV_WIN)
 	#ifndef isnan
-		#define isnan	_isnan
+		//#define isnan	_isnan
 	#endif
 	#ifndef finite
 		#define finite	_finite

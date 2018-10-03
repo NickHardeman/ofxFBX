@@ -12,7 +12,6 @@
 #include "ofMain.h"
 #include <fbxsdk.h>
 #include "GetPosition.h"
-#include "glm/gtx/matrix_decompose.hpp"
 
 // --- from Arturo Castro's ofxFBX -------
 inline glm::vec4 fbxToOf(const FbxVector4 & avec4){

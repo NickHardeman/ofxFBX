@@ -11,7 +11,6 @@
 #include "ofMain.h"
 #include <fbxsdk.h>
 #include "ofxFBXUtils.h"
-#include "glm/gtx/matrix_decompose.hpp"
 
 template<class T>
 struct ofxFBXKey {
