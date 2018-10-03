@@ -17,6 +17,9 @@ Features include:
 * Individual mesh manipulation
 * Enable and disable rendering of certain assets in the scene
 
+### Windows Visual Studio 2017 Notes
+Only compiles in Release 64-bit. Not sure why Debug doesn't work. 
+
 ### iOS Notes
 The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will also need to add libiconv.tbd in the Build Phase settings. (see below image.)
 
