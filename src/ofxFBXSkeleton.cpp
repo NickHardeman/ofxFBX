@@ -69,6 +69,11 @@ void ofxFBXSkeleton::update( int aAnimIndex, signed long aMillis ) {
 }
 
 //--------------------------------------------------------------
+void ofxFBXSkeleton::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
+    root.update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+}
+
+//--------------------------------------------------------------
 void ofxFBXSkeleton::lateUpdate() {
     root.lateUpdate();
 }

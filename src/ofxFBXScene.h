@@ -16,12 +16,6 @@
 //// -- https://github.com/arturoc/ofxFBX --
 //    #include <fbxsdk.h>
 //#endif
-//
-//#include "ofMain.h"
-//#if defined(TARGET_OSX)
-//    #include "fbxsdk.h"
-//#include "fbxscene.h"
-//#endif
 
 #include "ofMain.h"
 #include <fbxsdk.h>
@@ -64,6 +58,7 @@ public:
     ~ofxFBXScene();
     
 	bool load( string path, ofxFBXSceneSettings aSettings = ofxFBXSceneSettings() );
+    ofxFBXSceneSettings getSettings() { return _settings; }
     
     FbxScene* getFBXScene();
     

@@ -31,6 +31,7 @@ public:
     void update( FbxTime& pTime, FbxPose* pPose );
     // keyframes update //
     void update( int aAnimIndex, signed long aMillis );
+    void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
     void lateUpdate();
     
     void draw( float aLen = 6.f, bool aBDrawAxes = true );

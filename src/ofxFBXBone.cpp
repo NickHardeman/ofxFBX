@@ -111,6 +111,18 @@ void ofxFBXBone::update( int aAnimIndex, signed long aMillis ) {
 }
 
 //--------------------------------------------------------------
+void ofxFBXBone::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
+    if( isAnimationEnabled() ) {
+        ofxFBXNode::update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+    }
+    
+    map<string, ofxFBXBone >::iterator it;
+    for(it = bones.begin(); it != bones.end(); ++it ) {
+        it->second.update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+    }
+}
+
+//--------------------------------------------------------------
 void ofxFBXBone::lateUpdate() {
     ofxFBXBone* sbone   = sourceBone;
     if( sbone != NULL ) {
@@ -288,7 +300,7 @@ string ofxFBXBone::getAsString( int aLevel ) {
     if( getParent() != NULL ) {
         pname = " parent: " + parentBoneName;
     }
-    oStr += getName() + " kids: " +ofToString( bones.size(), 0) + pname + " anim: " + ofToString( isAnimationEnabled(), 0) + "\n";
+    oStr += getName() + " kids: " +ofToString( bones.size(), 0) + pname + " anim: " + ofToString( isAnimationEnabled(), 0) + " num keys: " +ofToString(mKeyCollections.size(),0) + "\n";
     
     map<string, ofxFBXBone >::iterator it;
     for(it = bones.begin(); it != bones.end(); ++it ) {

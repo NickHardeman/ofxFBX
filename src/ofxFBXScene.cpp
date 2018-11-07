@@ -44,6 +44,12 @@ ofxFBXScene::~ofxFBXScene() {
 
 //--------------------------------------------------------------
 bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
+    
+    if( !ofFile::doesFileExist(path)) {
+        ofLogError("ofxFBXScene") << " File does not exist!!: " << path << " :)";
+        return false;
+    }
+    
     bool lResult;
     
 	// Prepare the FBX SDK.

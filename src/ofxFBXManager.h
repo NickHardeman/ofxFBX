@@ -11,6 +11,18 @@
 
 class ofxFBXManager : public ofNode {
 public:
+    
+    class AnimationTransition {
+    public:
+        bool bActive = false;
+        float percent = 0.f;
+        float startTime = 0;
+        float duration = 1.0f;
+        int animIndex1 = 0;
+        int animIndex2 = 0;
+        
+    };
+    
     ofxFBXManager();
     ~ofxFBXManager();
     
@@ -47,6 +59,15 @@ public:
     bool areAnimationsEnabled();
     bool hasAnimations();
     
+    void transition( int aAnimIndex1, int aNumIndex2, float aduration );
+    void transition( string aAnimName1, string aNumName2, float aduration );
+    void transition( string aToAnimName, float aduration );
+    void transition( int aToAnimIndex, float aduration );
+    
+    bool isTransitioning();
+    float getTransitionPercent();
+    AnimationTransition& getTransition() { return mAnimTrans; }
+    
     vector< shared_ptr<ofxFBXSkeleton> >& getSkeletons();
     bool hasBones();
     int getNumSkeletons();
@@ -82,6 +103,10 @@ protected:
     bool bAnimationsEnabled = true;
     int poseIndex = 0;
     bool bPosesEnabled = false;
+    bool bUsingKeyframes = false;
+    
+    // only one for now //
+    AnimationTransition mAnimTrans;
     
 };
 

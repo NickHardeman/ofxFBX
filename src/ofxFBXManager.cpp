@@ -32,10 +32,18 @@ ofxFBXManager::~ofxFBXManager() {
 //--------------------------------------------------------------
 void ofxFBXManager::setup( ofxFBXScene* aScene ) {
     fbxScene = aScene;
+    if(fbxScene == NULL ) {
+        ofLogError("ofxFBXManager::setup : ofxFBXScene is NULL, make sure set and load the ofxFBXScene!");
+        return;
+    }
     if(fbxScene->getFBXScene() == NULL) {
         ofLogWarning("ofxFBXManager::setup : FbxScene is NULL, make sure to not unload the ofxFBXScene!");
         return;
     }
+    
+    // see if we are using keyframes //
+    bUsingKeyframes = fbxScene->getSettings().useKeyFrames;
+    
     aScene->populateAnimations( animations );
     
     // store transforms so that we can manipulate them and use them to draw later //
@@ -100,6 +108,11 @@ void ofxFBXManager::update(float aElapsedSeconds) {
 //    cout << "Should not be reaching here: ofxFBXManager :: update | " << ofGetFrameNum() << endl;
     
     animations[animationIndex].update(aElapsedSeconds);
+    if( mAnimTrans.bActive ) {
+        animations[mAnimTrans.animIndex2].update(aElapsedSeconds);
+    }
+    
+    
     
     if( currentAnimationStack != NULL ) {
         fbxScene->getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
@@ -111,10 +124,19 @@ void ofxFBXManager::update(float aElapsedSeconds) {
     // update.  //
 //    if(animations[animationIndex].isFrameNew() || animations[animationIndex].isPaused() ) {
     signed long tFbxAnimTime = (signed long)animations[animationIndex].fbxCurrentTime.GetMilliSeconds();
+    signed long tFbxAnimTime2 = 0;
+    if( mAnimTrans.bActive ) {
+        tFbxAnimTime2 = (signed long)animations[mAnimTrans.animIndex2].fbxCurrentTime.GetMilliSeconds();
+    }
+    
     vector< shared_ptr<ofxFBXMesh> > fbxMeshes = fbxScene->getMeshes();
     for(int i = 0; i < fbxMeshes.size(); i++ ) {
         if( fbxMeshes[i]->usingKeyFrames() ) {
-            fbxMeshes[i]->update( animationIndex, tFbxAnimTime );
+            if( mAnimTrans.bActive ) {
+                fbxMeshes[i]->update( mAnimTrans.animIndex1, tFbxAnimTime, mAnimTrans.animIndex2, tFbxAnimTime2, mAnimTrans.percent );
+            } else {
+                fbxMeshes[i]->update( animationIndex, tFbxAnimTime );
+            }
         } else {
             fbxMeshes[i]->update( animations[animationIndex].fbxCurrentTime, lPose );
         }
@@ -127,11 +149,27 @@ void ofxFBXManager::update(float aElapsedSeconds) {
     
     for( auto& skel : skeletons ) {
         if( skel->usingKeyFrames() ) {
-            skel->update( animationIndex, tFbxAnimTime );
+            if( mAnimTrans.bActive ) {
+                skel->update( mAnimTrans.animIndex1, tFbxAnimTime, mAnimTrans.animIndex2, tFbxAnimTime2, mAnimTrans.percent );
+            } else {
+                skel->update( animationIndex, tFbxAnimTime );
+            }
         } else {
             skel->update( animations[animationIndex].fbxCurrentTime, lPose );
         }
+    }
     
+    if( mAnimTrans.bActive ) {
+        float etimef = aElapsedSeconds;//ofGetElapsedTimef();
+        if (etimef < 0) {
+            etimef = ofGetElapsedTimef();
+        }
+        mAnimTrans.percent = (etimef - mAnimTrans.startTime) / mAnimTrans.duration;
+        if( mAnimTrans.percent >= 1.f ) {
+            mAnimTrans.percent = 1.0;
+            animationIndex = mAnimTrans.animIndex2; // switch to the targeted animation
+            mAnimTrans.bActive = false;
+        }
     }
 }
 
@@ -408,6 +446,57 @@ bool ofxFBXManager::hasAnimations() {
         }
     }
     return false;
+}
+
+//--------------------------------------------------------------
+void ofxFBXManager::transition( int aAnimIndex1, int aNumIndex2, float aduration ) {
+    if( !bUsingKeyframes ) {
+        ofLogError("ofxFbxManager :: transition : not transitioning, must be using keyframes. Set ofxFBXSceneSettings.useKeyFrames to true when loading the fbx scene" );
+        return;
+    }
+    if( !hasAnimations() ) {
+        ofLogError("ofxFbxManager :: transition : not transitioning, no animations" );
+        return;
+    }
+    if( !areAnimationsEnabled() ) {
+        ofLogError("ofxFbxManager :: transition : not transitioning, animations disabled" );
+        return;
+    }
+    if( aAnimIndex1 < 0 || aNumIndex2 < 0 || aAnimIndex1 >= getNumAnimations() || aNumIndex2 >= getNumAnimations() ) {
+        ofLogError("ofxFbxManager :: transition : invalid index: " ) << aAnimIndex1 << " index2: " << aNumIndex2 << " num animations: " << getNumAnimations();
+        return;
+    }
+    mAnimTrans.animIndex1 = aAnimIndex1;
+    mAnimTrans.animIndex2 = aNumIndex2;
+    mAnimTrans.duration = aduration;
+    mAnimTrans.percent = 0.f;
+    mAnimTrans.startTime = ofGetElapsedTimef();
+    mAnimTrans.bActive = true;
+}
+
+//--------------------------------------------------------------
+void ofxFBXManager::transition( string aAnimName1, string aNumName2, float aduration ) {
+    transition( getAnimationIndex( aAnimName1 ), getAnimationIndex( aNumName2 ), aduration );
+}
+
+//--------------------------------------------------------------
+void ofxFBXManager::transition( string aToAnimName, float aduration ) {
+    transition( getCurrentAnimationIndex(), getAnimationIndex(aToAnimName), aduration );
+}
+
+//--------------------------------------------------------------
+void ofxFBXManager::transition( int aToAnimIndex, float aduration ) {
+    transition( getCurrentAnimationIndex(), aToAnimIndex, aduration );
+}
+
+//--------------------------------------------------------------
+bool ofxFBXManager::isTransitioning() {
+    return mAnimTrans.bActive;
+}
+
+//--------------------------------------------------------------
+float ofxFBXManager::getTransitionPercent() {
+    return mAnimTrans.percent;
 }
 
 #pragma mark - Bones

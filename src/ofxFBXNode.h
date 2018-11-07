@@ -43,6 +43,11 @@ public:
     void cacheStartTransforms();
     
     virtual void update( int aAnimIndex, signed long aMillis );
+    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
+    
+    ofVec3f getKeyTranslation( int aAnimIndex, signed long aMillis );
+    ofQuaternion getKeyRotation( int aAnimIndex, signed long aMillis );
+    ofVec3f getKeyScale( int aAnimIndex, signed long aMillis );
     
     float getKeyValue( std::vector<ofxFBXKey<float> >& keys, signed long ms );
     ofQuaternion getKeyRotation(vector<ofxFBXKey<ofQuaternion> >& keys, signed long ms);

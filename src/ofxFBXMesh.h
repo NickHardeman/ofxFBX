@@ -59,6 +59,7 @@ public:
     
     void update( FbxTime& pTime, FbxPose* pPose );
     virtual void update( int aAnimIndex, signed long aMillis );
+    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
     
     void updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose  );
 

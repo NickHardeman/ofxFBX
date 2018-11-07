@@ -9,7 +9,6 @@
 #pragma once
 #include "ofMain.h"
 #include <math.h>
-
 #include <fbxsdk.h>
 
 class ofxFBXAnimation {

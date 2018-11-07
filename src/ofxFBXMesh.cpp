@@ -405,6 +405,11 @@ void ofxFBXMesh::update( int aAnimIndex, signed long aMillis ) {
 }
 
 //--------------------------------------------------------------
+void ofxFBXMesh::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
+    ofxFBXNode::update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+}
+
+//--------------------------------------------------------------
 void ofxFBXMesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose ) {
     const bool lHasShape    = fbxMesh->GetShapeCount() > 0;
     const bool lHasSkin     = fbxMesh->GetDeformerCount(FbxDeformer::eSkin) > 0;
