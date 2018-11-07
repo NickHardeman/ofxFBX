@@ -4,11 +4,14 @@
 
 ![FBX version 7.4](ReadMeImages/fbxout.gif)
 
+![FBX version 7.4](ReadMeImages/teddy.mov.gif)
+
 Currently supporting OSX, iOS and Windows Visual Studio. Tested with OF v0.10. Please check older releases for compatibility with older versions of OF.
 
 Features include:
 * Multiple Animations with individual control
 * External Bone Control with Animations
+* Linear Bone Animation Blending between two animations
 * Textures
 * Cameras
 * Materials
