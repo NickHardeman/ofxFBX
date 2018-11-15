@@ -120,6 +120,11 @@ void ofxFBXSkeleton::disableAnimation() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXSkeleton::clearKeyFrames() {
+    root.clearKeyFrames();
+}
+
+//--------------------------------------------------------------
 int ofxFBXSkeleton::getNumBones() {
     return root.getNumBones();
 }

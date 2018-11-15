@@ -206,8 +206,9 @@ void ofxFBXAnimation::setPosition( float aPct ) {
 //--------------------------------------------------------------
 void ofxFBXAnimation::setFrame( int aFrameNum ) {
     float tframe    = ofClamp( aFrameNum, 0, getTotalNumFrames() );
-    fbxCurrentTime  = fbxStartTime + fbxFrameTime * tframe;
-    lastUpdateTimeMillis = -1; // force update of new frame //
+    setPosition( tframe / (float)getTotalNumFrames() );
+//    fbxCurrentTime  = fbxStartTime + fbxFrameTime * tframe;
+//    lastUpdateTimeMillis = -1; // force update of new frame //
 }
 
 //--------------------------------------------------------------

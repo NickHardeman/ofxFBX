@@ -173,6 +173,16 @@ void ofxFBXBone::updateFbxTransform() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXBone::clearKeyFrames() {
+    ofxFBXNode::clearKeyFrames();
+    
+    map<string, ofxFBXBone >::iterator it;
+    for(it = bones.begin(); it != bones.end(); ++it ) {
+        it->second.clearKeyFrames();
+    }
+}
+
+//--------------------------------------------------------------
 void ofxFBXBone::pointTo( glm::vec3 aTarget ) {
     glm::vec3 axis( 1, 0, 0 );
     pointTo( aTarget, axis );

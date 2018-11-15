@@ -35,6 +35,8 @@ public:
     void update( FbxTime& pTime, FbxPose* pPose );
     virtual void update( int aAnimIndex, signed long aMillis );
     virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
+
+    
     void lateUpdate();
     void draw( float aLen = 6.f, bool aBDrawAxes = true);
     
@@ -51,6 +53,8 @@ public:
     void updateFbxTransform();
 //    void updateFbxTransformLocal();
     glm::quat& getOriginalLocalRotation();
+    
+    virtual void clearKeyFrames();
     
     int getNumBones();
     map< string, ofxFBXBone* > getAllBones();

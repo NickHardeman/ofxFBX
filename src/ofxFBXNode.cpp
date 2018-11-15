@@ -53,6 +53,11 @@ bool ofxFBXNode::usingKeyFrames() {
 }
 
 //--------------------------------------------------------------
+void ofxFBXNode::clearKeyFrames() {
+    mKeyCollections.clear();
+}
+
+//--------------------------------------------------------------
 void ofxFBXNode::cacheStartTransforms() {
     // cache the orientations for use later //
     origGlobalRotation  = getGlobalOrientation();

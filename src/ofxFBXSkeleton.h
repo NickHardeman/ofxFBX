@@ -44,6 +44,8 @@ public:
     void enableAnimation();
     void disableAnimation();
     
+    void clearKeyFrames();
+    
     int getNumBones();
     string toString();
     

@@ -171,7 +171,7 @@ bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
             currentFbxAnimationLayer = currentAnimationStack->GetMember<FbxAnimLayer>();
             getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
             
-            populateKeyFrames( lScene->GetRootNode(), currentFbxAnimationLayer, i );
+            populateKeyFrames( lScene->GetRootNode(), i );
         }
     }
     
@@ -266,7 +266,7 @@ void ofxFBXScene::cacheTexturesInScene( FbxScene* pScene ) {
                 ofPixels pixels;
                 bool loaded = ofLoadImage(pixels, filepath);
                 if(loaded){
-                    texture->allocate(pixels.getWidth(), pixels.getHeight(), ofGetGlInternalFormat(pixels), false);
+                    texture->allocate(pixels.getWidth(), pixels.getHeight(), ofGetGLInternalFormat(pixels), false);
                     pixels.mirror(true, false);
                     texture->loadData(pixels);
                 }
@@ -369,7 +369,7 @@ bool ofxFBXScene::areAnimationsEnabled() {
 void ofxFBXScene::populateAnimationInformation() {
     FbxArray<FbxString*> mAnimStackNameArray;
     lScene->FillAnimStackNameArray(mAnimStackNameArray);
-    animations.resize( mAnimStackNameArray.GetCount() );
+//    animations.resize( mAnimStackNameArray.GetCount() );
     for(int i = 0; i < mAnimStackNameArray.GetCount(); i++ ) {
         
         FbxAnimStack* lCurrentAnimationStack    = lScene->FindMember<FbxAnimStack>(mAnimStackNameArray[i]->Buffer());
@@ -387,12 +387,14 @@ void ofxFBXScene::populateAnimationInformation() {
             startTime   = lTimeLineTimeSpan.GetStart();
             endTime     = lTimeLineTimeSpan.GetStop();
         }
-        animations[i].setup( startTime, endTime, fbxFrameTime );
-        animations[i].fbxCurrentTime = animations[i].fbxStartTime;
+        ofxFBXAnimation animation;
+        animation.setup( startTime, endTime, fbxFrameTime );
+        animation.fbxCurrentTime = animation.fbxStartTime;
         FbxString tfbxName      = FbxString(*mAnimStackNameArray[i]);
-        animations[i].fbxname   = tfbxName;
-        animations[i].index     = i;
-        animations[i].name      = FbxString(*mAnimStackNameArray[i]);
+        animation.fbxname   = tfbxName;
+        animation.index     = i;
+        animation.name      = FbxString(*mAnimStackNameArray[i]);
+        animations.push_back( animation );
         //FbxString ostr = startTime;
         //startTime.
         ofLogVerbose("ofxFBXScene") << i << " - " << " ofxFBXScene :: animations[" << i << "].name: " << animations[i].name << " starttime: " << startTime.GetTimeString() << " end time: " << endTime.GetTimeString() << endl;
@@ -407,13 +409,98 @@ void ofxFBXScene::populateAnimationInformation() {
 //            populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, int aAnimIndex ) {
             
 //        }
-        
-        
-        
 //        cout << i << " - ofxFBXScene :: name " << animations[i].name << "| fbxname: " << FbxString(*mAnimStackNameArray[i]) << endl;
     }
     
     FbxArrayDelete(mAnimStackNameArray);
+}
+
+//--------------------------------------------------------------
+void ofxFBXScene::clearAnimations() {
+    animations.clear();
+    
+    if( areAnimationsEnabled() && _settings.useKeyFrames ) {
+        // politely inform the skeletons that we will be using keyframes //
+        for( auto& skel : skeletons ) {
+            skel->clearKeyFrames();
+        }
+        
+        for( auto& mesh : meshes ) {
+            mesh->clearKeyFrames();
+        }
+    }
+    
+}
+
+//--------------------------------------------------------------
+ofxFBXAnimation& ofxFBXScene::addAnimation( string aname, int aFrameBegin, int aFrameEnd, int aAnimStackIndex ) {
+    FbxArray<FbxString*> mAnimStackNameArray;
+    lScene->FillAnimStackNameArray(mAnimStackNameArray);
+    //animations.resize( mAnimStackNameArray.GetCount() );
+    
+    if( mAnimStackNameArray.GetCount() < 1 ) {
+        ofLogError("ofxFBXScene :: addAnimation : no animations in file found" );
+        return;
+    }
+    if( aAnimStackIndex >= mAnimStackNameArray.GetCount()) {
+        ofLogError("ofxFBXScene :: addAnimation : anim stack index" ) << " ("<<aAnimStackIndex<<")  is out of bounds";
+        return;
+    }
+    
+    FbxAnimStack* lCurrentAnimationStack    = lScene->FindMember<FbxAnimStack>(mAnimStackNameArray[aAnimStackIndex]->Buffer());
+    FbxTakeInfo* lCurrentTakeInfo           = lScene->GetTakeInfo(*(mAnimStackNameArray[aAnimStackIndex]));
+    
+    FbxTime startTime, endTime;
+    
+    if (lCurrentTakeInfo) {
+        startTime   = lCurrentTakeInfo->mLocalTimeSpan.GetStart();
+        endTime     = lCurrentTakeInfo->mLocalTimeSpan.GetStop();
+    } else {
+        // Take the time line value
+        FbxTimeSpan lTimeLineTimeSpan;
+        lScene->GetGlobalSettings().GetTimelineDefaultTimeSpan(lTimeLineTimeSpan);
+        startTime   = lTimeLineTimeSpan.GetStart();
+        endTime     = lTimeLineTimeSpan.GetStop();
+    }
+    
+    int totalFrames = ceil( (endTime.GetMilliSeconds() - startTime.GetMilliSeconds()) / fbxFrameTime.GetMilliSeconds() );
+    
+//    int ttime = ofMap(aPct, 0.f, 1.f, startTimeMillis, stopTimeMillis, true );
+//    fbxCurrentTime.SetMilliSeconds(ttime);
+    
+    FbxTime startFrameTime = startTime + fbxFrameTime * aFrameBegin;
+    FbxTime endFrameTime = startTime + fbxFrameTime * aFrameEnd;
+    
+    startFrameTime.SetMilliSeconds( (int)ofMap((float)aFrameBegin / (float)totalFrames, 0.f, 1.f, startTime.GetMilliSeconds(), endTime.GetMilliSeconds(), true ));
+    endFrameTime.SetMilliSeconds( (int)ofMap((float)aFrameEnd / (float)totalFrames, 0.f, 1.f, startTime.GetMilliSeconds(), endTime.GetMilliSeconds(), true ));
+    
+    if( startFrameTime > endTime ) startFrameTime = endTime;
+    if( endFrameTime > endTime ) endFrameTime = endTime;
+//    fbxCurrentTime  = fbxStartTime + fbxFrameTime * tframe;
+    
+    ofxFBXAnimation animation;
+    animation.setup( startFrameTime, endFrameTime, fbxFrameTime );
+    animation.fbxCurrentTime = animation.fbxStartTime;
+    FbxString tfbxName      = FbxString(*mAnimStackNameArray[aAnimStackIndex]);
+    animation.fbxname   = tfbxName;
+    animation.index     = animations.size();
+    animation.name      = aname;//FbxString(*mAnimStackNameArray[i]);
+    animations.push_back( animation );
+    ofLogVerbose("ofxFBXScene") << " Adding animation :: name: " << animation.name << " starttime: " << startFrameTime.GetTimeString() << " end time: " << endFrameTime.GetTimeString() << endl;
+    
+    if( areAnimationsEnabled() && _settings.useKeyFrames ) {
+        FbxAnimStack* currentAnimationStack = getFBXScene()->FindMember<FbxAnimStack>( (&animation.fbxname)->Buffer() );
+        if (currentAnimationStack != NULL) {
+            getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
+            populateKeyFrames( lScene->GetRootNode(), animation.index );
+        } else {
+            // this is a problem. The anim stack should be found in the scene!
+            ofLogWarning("ofxFBXManager :: addAnimation : the anim stack was not found in the scene!");
+        }
+    }
+    
+    FbxArrayDelete(mAnimStackNameArray);
+    return animations.back();
 }
 
 //--------------------------------------------------------------
@@ -653,7 +740,7 @@ void ofxFBXScene::constructSkeletonsRecursive( ofxFBXSkeleton* aSkeleton, FbxNod
 }
 
 //--------------------------------------------------------------
-void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, int aAnimIndex ) {
+void ofxFBXScene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
     
     if( !pNode ) return;
     
@@ -751,89 +838,89 @@ void ofxFBXScene::populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, i
     
     
     
-    if( fnode && false ) {
-        FbxAnimCurve* lAnimCurveX = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
-        FbxAnimCurve* lAnimCurveY = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
-        FbxAnimCurve* lAnimCurveZ = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
-        
-        ofxFBXKeyCollection& kcollection = fnode->getKeyCollection( aAnimIndex );
-        kcollection.posKeysX = getFloatKeys( lAnimCurveX );
-        kcollection.posKeysY = getFloatKeys( lAnimCurveY );
-        kcollection.posKeysZ = getFloatKeys( lAnimCurveZ );
-        
-        FbxAnimCurve* lScaleCurveX = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
-        FbxAnimCurve* lScaleCurveY = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
-        FbxAnimCurve* lScaleCurveZ = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
-        kcollection.scaleKeysX = getFloatKeys( lScaleCurveX );
-        kcollection.scaleKeysY = getFloatKeys( lScaleCurveY );
-        kcollection.scaleKeysZ = getFloatKeys( lScaleCurveZ );
-        
-        
-        // rotation //
-        FbxAnimCurve* lRotCurveX = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
-        FbxAnimCurve* lRotCurveY = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
-        FbxAnimCurve* lRotCurveZ = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
-        
-        map< signed long, int > mTimeCount;
-        vector< ofxFBXKey<ofQuaternion> > newRotKeys;
-        int xKeyCount = lRotCurveX ? lRotCurveX->KeyGetCount() : 0;
-        int yKeyCount = lRotCurveY ? lRotCurveY->KeyGetCount() : 0;
-        int zKeyCount = lRotCurveZ ? lRotCurveZ->KeyGetCount() : 0;
-        
-        FbxTime lKeyTime;
-        int lCount, lKeyCount;
-        if(lRotCurveX) {
-            lKeyCount = lRotCurveX->KeyGetCount();
-            for(lCount = 0; lCount < lKeyCount; lCount++) {
-                lKeyTime  = lRotCurveX->KeyGetTime(lCount);
-                if( mTimeCount.count(lKeyTime.GetMilliSeconds()) == 0 ) {
-                    mTimeCount[lKeyTime.GetMilliSeconds()] += 1;
-                    
-                    ofxFBXKey<ofQuaternion> tkey;
-                    //glm::mat4 tOfMat;
-					glm::vec3 translation, scale;
-					glm::quat rotation;
-                    if( pNode->GetParent() ) {
-                        FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( lKeyTime );
-                        //tOfMat = fbxToOf( tmatrix );
-						fbxToGlmComponents(tmatrix, translation, rotation, scale);
-                    } else {
-                        FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( lKeyTime );
-                        //tOfMat = fbxToOf( tmatrix );
-						fbxToGlmComponents(tmatrix, translation, rotation, scale);
-                    }
-                    
-                    //glm::vec3 scale;
-                   // glm::quat rotation;
-                   // glm::vec3 translation;
-                    //glm::vec3 skew;
-                    //glm::vec4 perspective;
-                    
-                    //glm::decompose(tOfMat, scale, rotation, translation, skew, perspective);
-                    
-                    tkey.value = rotation;
-//                    ofVec3f t,s;
-//                    ofQuaternion so;
+//    if( fnode && false ) {
+//        FbxAnimCurve* lAnimCurveX = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
+//        FbxAnimCurve* lAnimCurveY = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+//        FbxAnimCurve* lAnimCurveZ = pNode->LclTranslation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
 //
-//                    tOfMat.decompose( t, tkey.value, s, so);
-                    
-                    tkey.millis = lKeyTime.GetMilliSeconds();
-                    newRotKeys.push_back( tkey );
-                }
-            }
-        }
-        
-        if( newRotKeys.size() ) {
-            kcollection.rotKeys = newRotKeys;
-        }
-        
-        ofLogVerbose("ofxFBX :: populateKeyFrames : ") << "anim: " << aAnimIndex << " node: " << fnode->getName() << " num pos keys: " << kcollection.posKeysX.size() << " num rot keys: " << kcollection.rotKeys.size() << " num scale keys: " << kcollection.scaleKeysX.size() << " | " << ofGetFrameNum() << endl;
-    }
+//        ofxFBXKeyCollection& kcollection = fnode->getKeyCollection( aAnimIndex );
+//        kcollection.posKeysX = getFloatKeys( lAnimCurveX );
+//        kcollection.posKeysY = getFloatKeys( lAnimCurveY );
+//        kcollection.posKeysZ = getFloatKeys( lAnimCurveZ );
+//
+//        FbxAnimCurve* lScaleCurveX = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
+//        FbxAnimCurve* lScaleCurveY = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+//        FbxAnimCurve* lScaleCurveZ = pNode->LclScaling.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+//        kcollection.scaleKeysX = getFloatKeys( lScaleCurveX );
+//        kcollection.scaleKeysY = getFloatKeys( lScaleCurveY );
+//        kcollection.scaleKeysZ = getFloatKeys( lScaleCurveZ );
+//
+//
+//        // rotation //
+//        FbxAnimCurve* lRotCurveX = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_X);
+//        FbxAnimCurve* lRotCurveY = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+//        FbxAnimCurve* lRotCurveZ = pNode->LclRotation.GetCurve(pAnimLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+//
+//        map< signed long, int > mTimeCount;
+//        vector< ofxFBXKey<ofQuaternion> > newRotKeys;
+//        int xKeyCount = lRotCurveX ? lRotCurveX->KeyGetCount() : 0;
+//        int yKeyCount = lRotCurveY ? lRotCurveY->KeyGetCount() : 0;
+//        int zKeyCount = lRotCurveZ ? lRotCurveZ->KeyGetCount() : 0;
+//
+//        FbxTime lKeyTime;
+//        int lCount, lKeyCount;
+//        if(lRotCurveX) {
+//            lKeyCount = lRotCurveX->KeyGetCount();
+//            for(lCount = 0; lCount < lKeyCount; lCount++) {
+//                lKeyTime  = lRotCurveX->KeyGetTime(lCount);
+//                if( mTimeCount.count(lKeyTime.GetMilliSeconds()) == 0 ) {
+//                    mTimeCount[lKeyTime.GetMilliSeconds()] += 1;
+//
+//                    ofxFBXKey<ofQuaternion> tkey;
+//                    //glm::mat4 tOfMat;
+//                    glm::vec3 translation, scale;
+//                    glm::quat rotation;
+//                    if( pNode->GetParent() ) {
+//                        FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( lKeyTime );
+//                        //tOfMat = fbxToOf( tmatrix );
+//                        fbxToGlmComponents(tmatrix, translation, rotation, scale);
+//                    } else {
+//                        FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( lKeyTime );
+//                        //tOfMat = fbxToOf( tmatrix );
+//                        fbxToGlmComponents(tmatrix, translation, rotation, scale);
+//                    }
+//
+//                    //glm::vec3 scale;
+//                   // glm::quat rotation;
+//                   // glm::vec3 translation;
+//                    //glm::vec3 skew;
+//                    //glm::vec4 perspective;
+//
+//                    //glm::decompose(tOfMat, scale, rotation, translation, skew, perspective);
+//
+//                    tkey.value = rotation;
+////                    ofVec3f t,s;
+////                    ofQuaternion so;
+////
+////                    tOfMat.decompose( t, tkey.value, s, so);
+//
+//                    tkey.millis = lKeyTime.GetMilliSeconds();
+//                    newRotKeys.push_back( tkey );
+//                }
+//            }
+//        }
+//
+//        if( newRotKeys.size() ) {
+//            kcollection.rotKeys = newRotKeys;
+//        }
+//
+//        ofLogVerbose("ofxFBX :: populateKeyFrames : ") << "anim: " << aAnimIndex << " node: " << fnode->getName() << " num pos keys: " << kcollection.posKeysX.size() << " num rot keys: " << kcollection.rotKeys.size() << " num scale keys: " << kcollection.scaleKeysX.size() << " | " << ofGetFrameNum() << endl;
+//    }
     
     // cycle through the children //
     const int lChildCount = pNode->GetChildCount();
     for (int lChildIndex = 0; lChildIndex < lChildCount; ++lChildIndex) {
-        populateKeyFrames( pNode->GetChild(lChildIndex), pAnimLayer, aAnimIndex );
+        populateKeyFrames( pNode->GetChild(lChildIndex), aAnimIndex );
     }
     
 }

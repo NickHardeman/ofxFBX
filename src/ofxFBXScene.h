@@ -69,6 +69,8 @@ public:
     int getNumAnimations();
     bool areAnimationsEnabled();
     void populateAnimations( vector<ofxFBXAnimation>& aInVector );
+    void clearAnimations();
+    ofxFBXAnimation& addAnimation( string aname, int aFrameBegin, int aFrameEnd, int aAnimStackIndex=0 );
     
     void populateSkeletons( vector< shared_ptr<ofxFBXSkeleton> >& aInSkeletons );
     
@@ -94,7 +96,7 @@ private:
     void constructSkeletons( FbxNode* pNode, FbxAnimLayer* pAnimLayer );
     void constructSkeletonsRecursive( ofxFBXSkeleton* aSkeleton, FbxNode* pNode, int aBoneLevel );
     
-    void populateKeyFrames( FbxNode* pNode, FbxAnimLayer* pAnimLayer, int aAnimIndex );
+    void populateKeyFrames( FbxNode* pNode, int aAnimIndex );
     vector< ofxFBXKey<float> > getFloatKeys( FbxAnimCurve* pCurve );
     
     FbxTime fbxFrameTime;

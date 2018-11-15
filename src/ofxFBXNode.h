@@ -39,6 +39,7 @@ public:
     
     void setUseKeyFrames( bool ab );
     bool usingKeyFrames();
+    virtual void clearKeyFrames();
     
     void cacheStartTransforms();
     
