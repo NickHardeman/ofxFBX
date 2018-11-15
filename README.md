@@ -30,10 +30,10 @@ The example projects include a ofApp.cpp and main.cpp. The project generator wil
 ![libiconv](ReadMeImages/libiconv.png)
 
 If you have a fbx with a single animation that needs to be broken up into separate animations, you can try the following:
-`mScene.load( "Alligator.FBX", tsettings );
-mScene.clearAnimations();
-mScene.addAnimation("SwimBite", 81, 100 );
-mScene.addAnimation("Swim", 61, 80 );`
+`mScene.load( "Alligator.FBX", tsettings );`
+`mScene.clearAnimations();`
+`mScene.addAnimation("SwimBite", 81, 100 );`
+`mScene.addAnimation("Swim", 61, 80 );`
 
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
