@@ -98,6 +98,7 @@ private:
     
     void populateKeyFrames( FbxNode* pNode, int aAnimIndex );
     vector< ofxFBXKey<float> > getFloatKeys( FbxAnimCurve* pCurve );
+    bool requiresKeyForTime( vector< ofxFBXKey<float> >& tkeys, signed long amillis1, signed long amillis2 );
     
     FbxTime fbxFrameTime;
     string fbxFilePath;

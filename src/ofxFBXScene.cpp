@@ -46,7 +46,7 @@ ofxFBXScene::~ofxFBXScene() {
 bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
     
     if( !ofFile::doesFileExist(path)) {
-        ofLogError("ofxFBXScene") << " File does not exist!!: " << path << " :)";
+        ofLogError("ofxFBXScene") << " File does not exist!!: " << path << " :(";
         return false;
     }
     
@@ -128,18 +128,18 @@ bool ofxFBXScene::load( string path, ofxFBXSceneSettings aSettings ) {
         populateAnimationInformation();
     }
     
-//    if(animations.size() > 0) {
-//        FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
-//        if (lCurrentAnimationStack == NULL) {
-//            ofLogError("ofxFBXScene :: ") << "this is a problem. The anim stack should be found in the scene!" << endl;
-//            // this is a problem. The anim stack should be found in the scene!
-//            return false;
-//        }
-//        
-//        // we assume that the first animation layer connected to the animation stack is the base layer
-//        // (this is the assumption made in the FBXSDK)
-//        currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
-//    }
+    if(animations.size() > 0) {
+        FbxAnimStack * lCurrentAnimationStack = lScene->FindMember<FbxAnimStack>( (&animations[0].fbxname)->Buffer());
+        if (lCurrentAnimationStack == NULL) {
+            ofLogError("ofxFBXScene :: ") << "this is a problem. The anim stack should be found in the scene!" << endl;
+            // this is a problem. The anim stack should be found in the scene!
+            return false;
+        }
+        
+        // we assume that the first animation layer connected to the animation stack is the base layer
+        // (this is the assumption made in the FBXSDK)
+        currentFbxAnimationLayer = lCurrentAnimationStack->GetMember<FbxAnimLayer>();
+    }
     
     // populate meshes //
     populateMeshesRecursive( lScene->GetRootNode(), currentFbxAnimationLayer );
@@ -778,60 +778,141 @@ void ofxFBXScene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
         // figure out the parsing //
         ofxFBXAnimation& tanim = animations[ aAnimIndex ];
         ofxFBXKeyCollection& kcollection = fnode->getKeyCollection( aAnimIndex );
+        
+        
+        FbxAnimCurve* lPosCurveX = pNode->LclTranslation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_X);
+        FbxAnimCurve* lPosCurveY = pNode->LclTranslation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+        FbxAnimCurve* lPosCurveZ = pNode->LclTranslation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+        auto posXKeys = getFloatKeys( lPosCurveX );
+        auto posYKeys = getFloatKeys( lPosCurveY );
+        auto posZKeys = getFloatKeys( lPosCurveZ );
+        
+        FbxAnimCurve* lScaleCurveX = pNode->LclScaling.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_X);
+        FbxAnimCurve* lScaleCurveY = pNode->LclScaling.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+        FbxAnimCurve* lScaleCurveZ = pNode->LclScaling.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+        auto scaleXKeys = getFloatKeys( lScaleCurveX );
+        auto scaleYKeys = getFloatKeys( lScaleCurveY );
+        auto scaleZKeys = getFloatKeys( lScaleCurveZ );
+        
+        FbxAnimCurve* lRotCurveX = pNode->LclRotation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_X);
+        FbxAnimCurve* lRotCurveY = pNode->LclRotation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Y);
+        FbxAnimCurve* lRotCurveZ = pNode->LclRotation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Z);
+        
+        auto rotXKeys = getFloatKeys( lRotCurveX );
+        auto rotYKeys = getFloatKeys( lRotCurveY );
+        auto rotZKeys = getFloatKeys( lRotCurveZ );
+        
+        int numPosKeys = 0;
+        int numScaleKeys = 0;
+        int numRotKeys = 0;
+        
         for( int i = 0; i < tanim.getTotalNumFrames(); i++ ) {
             tanim.setFrame(i);
+            
+            signed long long cmillis = tanim.fbxCurrentTime.GetMilliSeconds();
+            signed long long nmillis = tanim.fbxCurrentTime.GetMilliSeconds() + fbxFrameTime.GetMilliSeconds();
+            
             // now get the information //
-            //glm::mat4 tmat;
+            bool bHasPosKey = false;
+            bool bHasScaleKey = false;
+            bool bHasRotKey = false;
+            
+            if( i == 0 || i == tanim.getTotalNumFrames()-1 ) {
+                bHasPosKey = true; bHasScaleKey = true; bHasRotKey = true;
+            }
+            
+            // check position //
+            if( !bHasPosKey && requiresKeyForTime(posXKeys, cmillis, nmillis )) bHasPosKey=true;
+            if( !bHasPosKey && requiresKeyForTime(posYKeys, cmillis, nmillis )) bHasPosKey=true;
+            if( !bHasPosKey && requiresKeyForTime(posZKeys, cmillis, nmillis )) bHasPosKey=true;
+            
+            // check position //
+            if( !bHasScaleKey && requiresKeyForTime(scaleXKeys, cmillis, nmillis )) bHasScaleKey=true;
+            if( !bHasScaleKey && requiresKeyForTime(scaleYKeys, cmillis, nmillis )) bHasScaleKey=true;
+            if( !bHasScaleKey && requiresKeyForTime(scaleZKeys, cmillis, nmillis )) bHasScaleKey=true;
+            
+            // check position //
+            if( !bHasRotKey && requiresKeyForTime(rotXKeys, cmillis, nmillis )) bHasRotKey=true;
+            if( !bHasRotKey && requiresKeyForTime(rotYKeys, cmillis, nmillis )) bHasRotKey=true;
+            if( !bHasRotKey && requiresKeyForTime(rotZKeys, cmillis, nmillis )) bHasRotKey=true;
+            
+            
 
 			glm::vec3 tpos, tscale;
 			glm::quat tquat;
 			//fbxToGlmComponents(FbxAMatrix& ainput, glm::vec3& apos, glm::quat& aquat, glm::vec3& ascale)
 
 //            if( pNode->GetParent() ) {
-            if( !bGrabGlobalTransform ) {
-                //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
-                FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( tanim.fbxCurrentTime );
-                //tmat = ( fbxToOf(tmatrix) );
-				fbxToGlmComponents(tmatrix, tpos, tquat, tscale);
-            } else { 
-                FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( tanim.fbxCurrentTime );
-               // tmat = ( fbxToOf(tmatrix) );
-				fbxToGlmComponents(tmatrix, tpos, tquat, tscale);
+            if( bHasPosKey || bHasScaleKey || bHasRotKey ) {
+                if( !bGrabGlobalTransform ) {
+                    //setTransformMatrix( ofGetLocalTransform( fbxNode, pTime, pPose, NULL ));
+                    FbxAMatrix& tmatrix = pNode->EvaluateLocalTransform( tanim.fbxCurrentTime );
+                    //tmat = ( fbxToOf(tmatrix) );
+                    fbxToGlmComponents(tmatrix, tpos, tquat, tscale);
+                } else {
+                    FbxAMatrix& tmatrix = pNode->EvaluateGlobalTransform( tanim.fbxCurrentTime );
+                   // tmat = ( fbxToOf(tmatrix) );
+                    fbxToGlmComponents(tmatrix, tpos, tquat, tscale);
+                }
+                
+                if( bHasPosKey ) {
+                    ofxFBXKey<float> tkeyPosX;
+                    tkeyPosX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tkeyPosX.value = tpos.x;
+                    kcollection.posKeysX.push_back( tkeyPosX );
+                    ofxFBXKey<float> tkeyPosY;
+                    tkeyPosY.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tkeyPosY.value = tpos.y;
+                    kcollection.posKeysY.push_back( tkeyPosY );
+                    ofxFBXKey<float> tkeyPosZ;
+                    tkeyPosZ.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tkeyPosZ.value = tpos.z;
+                    kcollection.posKeysZ.push_back( tkeyPosZ );
+                    
+                    numPosKeys++;
+                }
+                
+                if( bHasScaleKey ) {
+                    ofxFBXKey<float> tkeyScaleX;
+                    tkeyScaleX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tkeyScaleX.value = tscale.x;
+                    kcollection.scaleKeysX.push_back( tkeyScaleX );
+                    ofxFBXKey<float> tkeyScaleY;
+                    tkeyScaleY.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tkeyScaleY.value = tscale.y;
+                    kcollection.scaleKeysY.push_back( tkeyScaleY );
+                    ofxFBXKey<float> tkeyScaleZ;
+                    tkeyScaleZ.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tkeyScaleZ.value = tscale.z;
+                    kcollection.scaleKeysZ.push_back( tkeyScaleZ );
+                    
+                    numScaleKeys++;
+                }
+                
+                if( bHasRotKey ) {
+                    ofxFBXKey<ofQuaternion> tRotKey;
+                    tRotKey.millis = tanim.fbxCurrentTime.GetMilliSeconds();
+                    tRotKey.value = tquat;
+                    kcollection.rotKeys.push_back( tRotKey );
+                    
+                    numRotKeys++;
+                }
+                
             }
             
-            ofxFBXKey<float> tkeyPosX;
-            tkeyPosX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tkeyPosX.value = tpos.x;
-            kcollection.posKeysX.push_back( tkeyPosX );
-            ofxFBXKey<float> tkeyPosY;
-            tkeyPosY.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tkeyPosY.value = tpos.y;
-            kcollection.posKeysY.push_back( tkeyPosY );
-            ofxFBXKey<float> tkeyPosZ;
-            tkeyPosZ.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tkeyPosZ.value = tpos.z;
-            kcollection.posKeysZ.push_back( tkeyPosZ );
-            
-            
-            ofxFBXKey<float> tkeyScaleX;
-            tkeyScaleX.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tkeyScaleX.value = tscale.x;
-            kcollection.scaleKeysX.push_back( tkeyScaleX );
-            ofxFBXKey<float> tkeyScaleY;
-            tkeyScaleY.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tkeyScaleY.value = tscale.y;
-            kcollection.scaleKeysY.push_back( tkeyScaleY );
-            ofxFBXKey<float> tkeyScaleZ;
-            tkeyScaleZ.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tkeyScaleZ.value = tscale.z;
-            kcollection.scaleKeysZ.push_back( tkeyScaleZ );
-            
-            ofxFBXKey<ofQuaternion> tRotKey;
-            tRotKey.millis = tanim.fbxCurrentTime.GetMilliSeconds();
-            tRotKey.value = tquat;
-            kcollection.rotKeys.push_back( tRotKey );
-            
         }
+        
+        cout << "ofxFBXScene :: " << fnode->getName() << " num pos keys: " << numPosKeys << " scale: " << numScaleKeys << " rot: " << numRotKeys << " total: " << tanim.getTotalNumFrames() << endl;
+        
+        // rotation //
+//        FbxAnimCurve* lRotCurveX = pNode->LclRotation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_X);
+//        FbxTime lKeyTime;
+//        int lCount, lKeyCount;
+//        if(lRotCurveX) {
+//            lKeyCount = lRotCurveX->KeyGetCount();
+//            cout << "ofxFBXScene :: PopulateKeyFrames " << fnode->getName() << " num keys: " << lKeyCount << endl;
+//        }
+        
         
 //        cout << "ofxFBXScene :: adding keyframes for : " << pNode->GetName() << " is root: " << (fnode->isRoot()) << " num pos keys: " << kcollection.posKeysX.size() << endl;
     }
@@ -946,6 +1027,16 @@ vector< ofxFBXKey<float> > ofxFBXScene::getFloatKeys( FbxAnimCurve* pCurve ) {
     }
     
     return tkeys;
+}
+
+//--------------------------------------------------------------
+bool ofxFBXScene::requiresKeyForTime( vector< ofxFBXKey<float> >& tkeys, signed long amillis1, signed long amillis2 ) {
+    for( int i = 0; i < tkeys.size(); i++ ) {
+        if(tkeys[i].millis >= amillis1 && tkeys[i].millis < amillis2 ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #pragma mark - Poses
