@@ -6,7 +6,9 @@
 
 ![FBX version 7.4](ReadMeImages/teddy.mov.gif)
 
-Currently supporting OSX, iOS and Windows Visual Studio. Tested with OF v0.10. Please check older releases for compatibility with older versions of OF.
+Updated to maintain the hierarchy of the fbx file. Added getter / search functions. 
+Not compatible with older versions of the addon.
+Currently supporting OSX, iOS and Windows Visual Studio. Tested with OF >= v0.10. Please check older releases for compatibility with older versions of OF.
 
 Features include:
 * Multiple Animations with individual control
@@ -14,15 +16,18 @@ Features include:
 * Linear Bone Animation Blending between two animations
 * Define animations
 * Textures
-* Cameras
 * Materials
 * Cached meshes and scenes for faster rendering
-* Poses
 * Individual mesh manipulation
 * Enable and disable rendering of certain assets in the scene
+* Caching of mesh animations
+* Getter / search functions
+* Maintains fbx hierarchy
+* Scene caching for faster loading of the same scene multiple times
+* Conversion to different units
 
 ### Windows Visual Studio 2017 Notes
-Only compiles in Release 64-bit. Not sure why Debug doesn't work. 
+To compile in Debug mode, unzip the lib in `ofxFBX/libs/fbxsdk_2016.1/lib/vs/x64/Debug`
 
 ### iOS Notes
 The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will also need to add libiconv.tbd in the Build Phase settings. (see below image.)
@@ -30,10 +35,10 @@ The example projects include a ofApp.cpp and main.cpp. The project generator wil
 ![libiconv](ReadMeImages/libiconv.png)
 
 If you have a fbx with a single animation that needs to be broken up into separate animations, you can try the following:
-`mScene.load( "Alligator.FBX", tsettings );`
-`mScene.clearAnimations();`
-`mScene.addAnimation("SwimBite", 81, 100 );`
-`mScene.addAnimation("Swim", 61, 80 );`
+`mScene.load( "Alligator.FBX", tsettings );`\n
+`mScene.clearAnimations();`\n
+`mScene.addAnimation("SwimBite", 81, 100 );`\n
+`mScene.addAnimation("Swim", 61, 80 );`\n
 
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
