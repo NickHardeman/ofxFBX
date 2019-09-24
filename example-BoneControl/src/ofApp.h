@@ -36,13 +36,12 @@ public:
         void gotMessage(ofMessage msg);
 #endif
     
-    ofxFBXScene scene;
     ofEasyCam cam;
-    ofxFBXManager fbxMan;
+    ofxFBX fbx;
     
-    bool bRenderNormals;
-    bool bRenderMeshes;
-    bool bDrawBones;
+    bool bRenderNormals = false;
+    bool bRenderMeshes = true;
+    bool bDrawBones = false;
     
     ofLight light;
 };

@@ -37,9 +37,9 @@ public:
     void gotMessage(ofMessage msg);
 #endif
     
-    ofxFBXScene scene;
+    ofxFBX fbx;
     ofEasyCam cam;
-    ofxFBXManager fbxMan;
+//    ofxFBXManager fbxMan;
     
     bool bRenderNormals;
     bool bRenderMeshes;

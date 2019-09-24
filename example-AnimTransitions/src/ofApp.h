@@ -37,9 +37,9 @@ public:
     void gotMessage(ofMessage msg);
 #endif
     
-    ofxFBXScene scene;
+//    ofxFBXScene scene;
     ofEasyCam cam;
-    ofxFBXManager fbxMan, fbxManSmooth;
+    ofxFBX fbx, fbxSmooth;
     
     bool bRenderNormals;
     ofTexture teddyTex;

@@ -4,11 +4,17 @@
 void ofApp::setup() {
     ofDisableArbTex();
     
-    ofxFBXSceneSettings settings;
+    // uncomment this to convert scene to meters //
+    //ofxFBXSource::Scene::FbxUnits = FbxSystemUnit::m;
     
-    string filename = "astroBoy_walk.fbx";
+    ofxFBXSource::Scene::Settings settings;
+    settings.filePath = "astroBoy_walk.fbx";
+//    settings.useKeyFrames = false;
+    settings.printInfo = true;
     
-    if( scene.load(filename, settings) ) {
+    ofSetLogLevel(OF_LOG_VERBOSE);
+    
+    if( fbx.load(settings) ) {
         cout << "ofApp :: loaded the scene OK" << endl;
     } else {
         cout << "ofApp :: Error loading the scene" << endl;
@@ -19,11 +25,10 @@ void ofApp::setup() {
     cam.setFarClip(100);
     cam.setNearClip( .5f );
     
-    fbxMan.setup( &scene );
-    fbxMan.setAnimation(0);
-    fbxMan.setPosition( 0, -7, 0 );
+    fbx.setAnimation(0);
+    fbx.setPosition( 0, -7, 0 );
     
-    cout << fbxMan.getSkeletonInfo() << endl;
+    //cout << fbx.getSkeletonInfo() << endl;
     
     bRenderNormals  = false;
     bRenderMeshes   = true;
@@ -35,22 +40,35 @@ void ofApp::update() {
     
     light.setPosition( cos(ofGetElapsedTimef()*2.) * 7, 4 + sin( ofGetElapsedTimef() ) * 2.5, 10  );
     
-    ofVec3f target( ofMap( ofGetMouseX(), 0, ofGetWidth(), -10, 10, true), fbxMan.getPosition().y, fbxMan.getPosition().z+10 );
-    fbxMan.lookAt( target );
-    fbxMan.pan( 180 );
+    ofVec3f target( ofMap( ofGetMouseX(), 0, ofGetWidth(), -10, 10, true), fbx.getPosition().y, fbx.getPosition().z+10 );
+    fbx.lookAt( target );
+    fbx.panDeg( 180 );
     
-    fbxMan.getCurrentAnimation().setSpeed( ofMap( ofGetMouseY(), 100, ofGetHeight()-100, 0.5, 2.5, true ));
+    fbx.getCurrentAnimation().setSpeed( ofMap( ofGetMouseY(), 100, ofGetHeight()-100, 0.5, 2.5, true ));
     
-    fbxMan.update();
+//    fbx.update();
     
-    // perform any bone manipulation here //
-    ofxFBXBone* bone = fbxMan.getBone("head");
-    if( bone != NULL ) {
-        bone->disableAnimation(true);
-        bone->pointTo( light.getPosition(), ofVec3f(1,0,0) ) ;
+    // change colors of the materials //
+    for( int i = 0; i < fbx.getNumMeshes(); i++ ) {
+//        cout << i << " - " << fbx.getMeshes()[i]->getName() << " num materials: " << fbx.getMeshes()[i]->getNumMaterials() << endl;
+        if( fbx.getMeshes()[i]->getNumMaterials() > 2 ) {
+            auto mat = fbx.getMeshes()[i]->getMaterials()[2];
+            mat->setDiffuseColor( ofFloatColor(sin(ofGetElapsedTimef()*4.)*0.5+0.5, 1, 1, 1 ));
+            mat->disableTextures();
+        }
     }
     
-    fbxMan.lateUpdate();
+    // moves the bones into place based on the animation //
+    fbx.earlyUpdate();
+
+    // perform any bone manipulation here //
+    shared_ptr<ofxFBXBone> bone = fbx.getBone("head");
+    if( bone ) {
+        bone->pointTo( light.getPosition(), ofVec3f(-1,0,0) ) ;
+    }
+    
+    // manipulates the mesh around the positioned bones //
+    fbx.lateUpdate();
     
 }
 
@@ -59,69 +77,65 @@ void ofApp::draw() {
     
     ofSetColor(255, 255, 255);
     
-    glEnable( GL_DEPTH_TEST );
+    ofEnableDepthTest();
     
     
-    cam.begin();
+    cam.begin(); {
     
-    ofEnableLighting();
-    light.enable();
+        ofEnableLighting();
+        light.enable();
+        
+        if( bRenderMeshes ) {
+            ofSetColor( 255, 255, 255 );
+            fbx.draw();
+        }
+        
+        light.disable();
+        ofDisableLighting();
+        
+        if(bDrawBones) {
+            fbx.drawSkeletons( 0.5 );
+        }
+        
+        if( bRenderNormals ) {
+            ofSetColor( 255, 0, 255 );
+            fbx.drawMeshNormals( 0.5, false );
+        }
+        
+        ofNoFill();
+        ofSetColor( 50, 50, 50 );
+        ofDrawBox( 0, 0, 0, 14 );
+        ofFill();
+        
+        ofSetColor( light.getDiffuseColor() );
+        ofDrawSphere( light.getPosition(), 1 );
+        
+    } cam.end();
     
-    if( bRenderMeshes ) {
-        ofSetColor( 255, 255, 255 );
-        fbxMan.draw();
-    }
+    ofDisableDepthTest();
     
-    light.disable();
-    ofDisableLighting();
-    
-    if(bDrawBones) {
-        fbxMan.drawSkeletons( 0.5 );
-    }
-    
-    if( bRenderNormals ) {
-        ofSetColor( 255, 0, 255 );
-        fbxMan.drawMeshNormals( 0.5, false );
-    }
-    
-    ofNoFill();
-    ofSetColor( 50, 50, 50 );
-    ofDrawBox( 0, 0, 0, 14 );
-    ofFill();
-    
-    ofSetColor( light.getDiffuseColor() );
-    ofDrawSphere( light.getPosition(), 1 );
-    
-    cam.end();
-    
-    glDisable( GL_DEPTH_TEST );
-    
-    int numBones = 0;
-    vector< shared_ptr<ofxFBXSkeleton> >& skeletons = fbxMan.getSkeletons();
-    for( int i = 0; i < skeletons.size(); i++ ) {
-        numBones += skeletons[i]->getNumBones();
-    }
+    int numBones = fbx.getNumBones();
     
     ofSetColor( 60, 60, 60 );
     stringstream ds;
     ds << "Render normals (n): " << bRenderNormals << endl;
     ds << "Render meshes (m): " << bRenderMeshes << endl;
     ds << "Render " << numBones << " bones (b): " << bDrawBones << endl;
-    if( fbxMan.areAnimationsEnabled() ) {
-        ds << "Toggle play/pause (spacebar): playing: " << fbxMan.getCurrentAnimation().isPlaying() << endl;
-        ds << "Previous/Next animation (up/down): " << fbxMan.getCurrentAnimation().name << endl;
+    if( fbx.areAnimationsEnabled() ) {
+        ds << "Toggle play/pause (spacebar): playing: " << fbx.getCurrentAnimation().isPlaying() << endl;
+        ds << "Previous/Next animation (up/down): " << fbx.getCurrentAnimation().name << endl;
     }
-    ds << "Scale is " << fbxMan.getScale() << endl;
-    if( fbxMan.getNumPoses() > 0 ) {
-        ds << "Pose: " << fbxMan.getCurrentPose()->getName() << " num poses: " << fbxMan.getNumPoses() << " enabled (p): " << fbxMan.arePosesEnabled() << endl;
+    ds << "Scale is " << fbx.getScale() << endl;
+    if( fbx.getNumPoses() > 0 ) {
+        ds << "Pose: " << fbx.getCurrentPose()->getName() << " num poses: " << fbx.getNumPoses() << " enabled (p): " << fbx.arePosesEnabled() << endl;
     }
     ofDrawBitmapString( ds.str(), 50, 30 );
     
     
-    for(int i = 0; i < fbxMan.getNumAnimations(); i++ ) {
+    for(int i = 0; i < fbx.getNumAnimations(); i++ ) {
         stringstream ss;
-        ofxFBXAnimation& anim = fbxMan.getAnimation( i );
-        if( i == fbxMan.getCurrentAnimationIndex() ) {
+        ofxFBXAnimation& anim = fbx.getAnimation( i );
+        if( i == fbx.getCurrentAnimationIndex() ) {
             ss << "- ";
         }
         ss << "name: " << anim.name << " " << ofToString(anim.getPositionSeconds(), 3) << " | " << ofToString(anim.getDurationSeconds(), 3) << " frame: " << anim.getFrameNum() << " / " << anim.getTotalNumFrames() << endl;
@@ -164,21 +178,21 @@ void ofApp::touchCancelled(ofTouchEventArgs & touch) {
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
-    if(scene.getNumAnimations() > 1) {
+    if(fbx.getNumAnimations() > 1) {
         if(key == OF_KEY_DOWN ) {
-            int newAnimIndex = fbxMan.getCurrentAnimationIndex()+1;
-            if(newAnimIndex > scene.getNumAnimations()-1 ) {
+            int newAnimIndex = fbx.getCurrentAnimationIndex()+1;
+            if(newAnimIndex > fbx.getNumAnimations()-1 ) {
                 newAnimIndex = 0;
             }
-            fbxMan.setAnimation( newAnimIndex );
+            fbx.setAnimation( newAnimIndex );
             
         }
         if(key == OF_KEY_UP ) {
-            int newAnimIndex = fbxMan.getCurrentAnimationIndex()-1;
+            int newAnimIndex = fbx.getCurrentAnimationIndex()-1;
             if(newAnimIndex < 0 ) {
-                newAnimIndex = scene.getNumAnimations()-1;
+                newAnimIndex = fbx.getNumAnimations()-1;
             }
-            fbxMan.setAnimation( newAnimIndex );
+            fbx.setAnimation( newAnimIndex );
         }
     }
 }
@@ -186,7 +200,7 @@ void ofApp::keyPressed(int key) {
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
     if(key == ' ') {
-        fbxMan.getCurrentAnimation().togglePlayPause();
+        fbx.getCurrentAnimation().togglePlayPause();
     }
     if(key == 'n') {
         bRenderNormals = !bRenderNormals;
