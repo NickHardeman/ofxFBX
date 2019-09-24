@@ -1,41 +1,29 @@
 //
 //  ofxFBXMeshMaterial.h
-//  ofxFBX-Example-Importer
+//  example-BoneControl
 //
-//  Created by Nick Hardeman on 10/31/13.
-//
+//  Created by Nick Hardeman on 7/15/19.
 //
 
 #pragma once
-
-//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-//    #include <fbxsdk.h>
-//#endif
-
 #include "ofMain.h"
-#include <fbxsdk.h>
-
-//#if defined(TARGET_OSX)
-//    #include "fbxsdk.h"
-//#endif
-
-class ofxFBXTexture : public ofTexture {
-public:
-	string filePath;
-};
+#include "ofxFBXSrcMeshMaterial.h"
 
 class ofxFBXMeshMaterial : public ofMaterial {
 public:
-    ofxFBXMeshMaterial();
-    ~ofxFBXMeshMaterial() {}
     
-    void setup( const FbxSurfaceMaterial * pMaterial );
+    void setup( ofxFBXSource::MeshMaterial* aSrcMat );
+    void setTexture( shared_ptr<ofTexture> aUserTex );
     
     void begin();
     void end();
     
     bool hasTexture();
-	ofxFBXTexture* getTexturePtr();
+    bool hasSourceTexture();
+    bool hasUserTexture();
+    shared_ptr<ofTexture> getUserTexture();
+    shared_ptr<ofxFBXSource::MeshTexture> getSrcTexture();
+    
     void enableTextures();
     void disableTextures();
     bool areTexturesEnabled();
@@ -51,27 +39,13 @@ public:
     string getName();
     string getInfoAsString();
     
-    // from ViewScene example included in the SDK //
-    // Get specific property value and connected texture if any.
-    // Value = Property value * Factor property value (if no factor property, multiply by 1).
-    ofFloatColor getMaterialProperty(const FbxSurfaceMaterial * pMaterial,
-                                     const char * pPropertyName,
-                                     const char * pFactorPropertyName );
-    
 protected:
-    bool findTextureForProperty(const FbxSurfaceMaterial * pMaterial,
-                                const char * pPropertyName );
+    bool _bTexturesEnabled = true;
+    bool _bMaterialsEnabled = true;
+    bool _bEnabled = true;
+    string _name = "default material name";
     
-    bool _bTexturesEnabled;
-    bool _bMaterialsEnabled;
-    bool _bEnabled;
-    string _name;
-    string _textureName="";
-	ofxFBXTexture* texture;
-    
+    shared_ptr<ofTexture> mUserTex;
+    shared_ptr<ofxFBXSource::MeshTexture> mSrcTexture;
+
 };
-
-
-
-
-

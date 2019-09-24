@@ -8,10 +8,12 @@
 #pragma once
 #include "ofxFBXUtils.h"
 
-class ofxFBXPose {
+namespace ofxFBXSource {
+
+class Pose {
 public:
     
-    ofxFBXPose();
+    Pose();
     void setup( FbxPose* aPose, int aFbxIndex );
     
     string getName();
@@ -23,6 +25,8 @@ public:
     
 private:
     string name;
-    int fbxIndex;
-    FbxPose* fbxPose;
+    int fbxIndex = 0;
+    FbxPose* fbxPose = NULL;
 };
+    
+}

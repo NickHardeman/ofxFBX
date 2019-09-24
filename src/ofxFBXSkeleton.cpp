@@ -7,146 +7,125 @@
 //
 
 #include "ofxFBXSkeleton.h"
-ofxFBXBone dummyBone;
 
-//--------------------------------------------------------------
-ofxFBXSkeleton::ofxFBXSkeleton() {
-    
+//----------------------------------------
+ofxFBXSource::Node::NodeType ofxFBXSkeleton::getType() {
+    return ofxFBXSource::Node::OFX_FBX_SKELETON;
 }
 
-//--------------------------------------------------------------
-ofxFBXSkeleton::~ofxFBXSkeleton() {
-    
-}
-
-//--------------------------------------------------------------
-void ofxFBXSkeleton::setup( FbxNode *pNode ) {
-    ofxFBXNode::setup( pNode );
-    root.setup( pNode );
-}
-
-//--------------------------------------------------------------
-void ofxFBXSkeleton::reconstructNodeParenting() {
-    
-//    cout << "ofxFBXSkeleton :: rootSounce->hasParent() : " << (rootSource->getParent()==NULL) << " | " << ofGetFrameNum() << endl;
-    
-    ofxFBXBone tbone = *rootSource;
-    root = tbone;
-    
-    root.setAsRoot();
-    root.sourceBone = rootSource;
-    root.setupFromSourceBones();
-    
-    // now we need to reassociate the bone parent pointers, so they are not pointing to the source bones //
-    // we need a way to get all of the bones as pointers, so we can easily make the association //
-    map< string, ofxFBXBone* > tempBones = root.getAllBones();
-    map< string, ofxFBXBone* >::iterator it;
-    
-    // clear the parents to remove the previous listeners //
-    for( it = tempBones.begin(); it != tempBones.end(); ++it ) {
-        if( it->second->getParent() != NULL ) {
-            it->second->clearParent();
+//--------------------------------------------------------------------------------
+void ofxFBXSkeleton::setup( shared_ptr<ofxFBXSource::Node> anode ) {
+    ofxFBXNode::setup( anode );
+    if( anode && anode->getType() == ofxFBXSource::Node::OFX_FBX_SKELETON ) {
+        auto tskel = dynamic_pointer_cast<ofxFBXSource::Skeleton>(anode);
+        if( tskel ) {
+            root = make_shared<ofxFBXBone>();
+            root->setParent(*this);
+            //root->setup( anode );
+            root->setBoneSource( tskel->root, root );
+            addChild(root);
         }
     }
-    
-    for( it = tempBones.begin(); it != tempBones.end(); ++it ) {
-        if( it->second->hasSkeletonParent() ) {
-            if( tempBones.count(it->second->parentBoneName) ) {
-                it->second->setParent( *tempBones[it->second->parentBoneName] );
-            }
-        }
-    }
+}
+
+//--------------------------------------------------------------
+void ofxFBXSkeleton::setupRoot( shared_ptr<ofxFBXNode> aparent ) {
+    root->setParentNode( aparent );
 }
 
 //--------------------------------------------------------------
 void ofxFBXSkeleton::update( FbxTime& pTime, FbxPose* pPose ) {
-    root.update( pTime, pPose );
+    _checkSrcSkel();
+    if(mSrcSkel) {
+        mSrcSkel->update( pTime, pPose );
+        
+    }
 }
 
 //--------------------------------------------------------------
 void ofxFBXSkeleton::update( int aAnimIndex, signed long aMillis ) {
-    root.update( aAnimIndex, aMillis );
+    _checkSrcSkel();
+//    cout << "ofxFBXSkeleton::update " << getName() << " : src skel: " << ( mSrcSkel ? "Good" : "Bad" ) << " | " << ofGetFrameNum() << endl;
+    if(mSrcSkel) {
+        mSrcSkel->update( aAnimIndex, aMillis );
+    }
 }
 
 //--------------------------------------------------------------
 void ofxFBXSkeleton::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
-    root.update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+    _checkSrcSkel();
+    if(mSrcSkel) {
+        mSrcSkel->update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+    }
 }
 
-//--------------------------------------------------------------
-void ofxFBXSkeleton::lateUpdate() {
-    root.lateUpdate();
+//----------------------------------------------------------------
+void ofxFBXSkeleton::update() {
+    root->update();
 }
 
-//--------------------------------------------------------------
+//----------------------------------------------------------------
+void ofxFBXSkeleton::lateUpdate(FbxTime& pTime, FbxAnimLayer* pAnimLayer, FbxPose* pPose) {
+    root->lateUpdate();
+}
+
+//----------------------------------------------------------------
 void ofxFBXSkeleton::draw( float aLen, bool aBDrawAxes ) {
-    root.draw( aLen, aBDrawAxes );
+//    transformGL(); {
+        root->draw( aLen, aBDrawAxes );
+//    } restoreTransformGL();
 }
 
-//--------------------------------------------------------------
-ofxFBXBone* ofxFBXSkeleton::getBone( string aName ) {
-    if( root.getName() == aName ) return &root;
-    return root.getBone( aName );
+//----------------------------------------------------------------
+int ofxFBXSkeleton::getNumBones() {
+    return root->getNumBones();
 }
 
-//--------------------------------------------------------------
+//----------------------------------------------------------------
+shared_ptr<ofxFBXBone> ofxFBXSkeleton::getBone( string aName ) {
+    if( root->getName() == aName ) return root;
+    return root->getBone( aName );
+}
+
+//----------------------------------------------------------------
+string ofxFBXSkeleton::getAsString( int aLevel ) {
+    string tstr = "Skeleton: " + root->getName()+ " total bones: " + ofToString( getNumBones(), 0 ) + "\n ";
+    return (tstr + root->getAsString(1));
+}
+
+//----------------------------------------------------------------
 void ofxFBXSkeleton::enableAnimationForBone( string aName, bool bRecursive ) {
-    ofxFBXBone* bone = getBone( aName );
+    shared_ptr<ofxFBXBone> bone = getBone( aName );
     if(bone == NULL) {
-        ofLogWarning("ofxFBXSkeleton :: enableExternalControl : can not find bone with name ") << aName;
+        ofLogWarning("Skeleton :: enableExternalControl : can not find bone with name ") << aName;
         return;
     }
     bone->enableAnimation( bRecursive );
 }
 
-//--------------------------------------------------------------
+//----------------------------------------------------------------
 void ofxFBXSkeleton::disableAnimationForBone( string aName, bool bRecursive ) {
-    ofxFBXBone* bone = getBone( aName );
+    shared_ptr<ofxFBXBone> bone = getBone( aName );
     if(bone == NULL) {
-        ofLogWarning("ofxFBXSkeleton :: enableExternalControl : can not find bone with name ") << aName;
+        ofLogWarning("Skeleton :: enableExternalControl : can not find bone with name ") << aName;
         return;
     }
     bone->disableAnimation( bRecursive );
 }
 
-//--------------------------------------------------------------
+//----------------------------------------------------------------
 void ofxFBXSkeleton::enableAnimation() {
-    root.enableAnimation( true );
+    root->enableAnimation( true );
 }
 
-//--------------------------------------------------------------
+//----------------------------------------------------------------
 void ofxFBXSkeleton::disableAnimation() {
-    root.disableAnimation( true );
+    root->disableAnimation( true );
 }
 
-//--------------------------------------------------------------
-void ofxFBXSkeleton::clearKeyFrames() {
-    root.clearKeyFrames();
+//----------------------------------------------------------------
+void ofxFBXSkeleton::_checkSrcSkel() {
+    if( !mSrcSkel && mSrcNode && mSrcNode->getType() == ofxFBXSource::Node::OFX_FBX_SKELETON ) {
+        mSrcSkel = dynamic_pointer_cast<ofxFBXSource::Skeleton>(mSrcNode);
+    }
 }
-
-//--------------------------------------------------------------
-int ofxFBXSkeleton::getNumBones() {
-    return root.getNumBones();
-}
-
-//--------------------------------------------------------------
-string ofxFBXSkeleton::toString() {
-    string tstr = "Skeleton: " + root.getName()+ " total bones: " + ofToString( getNumBones(), 0 ) + "\n ";
-    tstr += root.getAsString();
-    return tstr;
-}
-
-//--------------------------------------------------------------
-map< string, ofxFBXBone* > ofxFBXSkeleton::getAllBones() {
-    return root.getAllBones();
-}
-
-
-
-
-
-
-
-
-
-

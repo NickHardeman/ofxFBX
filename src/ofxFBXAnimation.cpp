@@ -62,15 +62,34 @@ void ofxFBXAnimation::update( float aElapsedTimeSeconds ) {
 		}
 		//int etimeMillis = aElapsedTimeSeconds * 1000;
 		//cout << "etimeMillis: " << etimeMillis << " argMillis: " << (aElapsedTimeSeconds * 1000) << " secs: " << aElapsedTimeSeconds << " | " << ofGetFrameNum() << endl;
+        
+        
         if(etimeMillis - lastUpdateTimeMillis >= tframeTime ) {
-            bNewFrame = true;
-            if( _speed >= 0 ) {
-                fbxCurrentTime += (fbxFrameTime);
-            } else {
-                fbxCurrentTime -= (fbxFrameTime);
+            
+            //needed for when the animation speed is faster than the app framerate. 
+            if( fabs(_speed) > 1.0 ){
+                fbxCurrentTime += (fbxFrameTime) * tspeed;
+            }else{
+                if( _speed >= 0 ) {
+                    fbxCurrentTime += (fbxFrameTime);
+                } else {
+                    fbxCurrentTime -= (fbxFrameTime);
+                }
             }
+            
+            bNewFrame = true;
             lastUpdateTimeMillis = etimeMillis;
         }
+        
+//        if(etimeMillis - lastUpdateTimeMillis >= tframeTime ) {
+//            bNewFrame = true;
+//            if( _speed >= 0 ) {
+//                fbxCurrentTime += (fbxFrameTime);
+//            } else {
+//                fbxCurrentTime -= (fbxFrameTime);
+//            }
+//            lastUpdateTimeMillis = etimeMillis;
+//        }
     }
     
         

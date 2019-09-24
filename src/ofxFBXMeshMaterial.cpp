@@ -1,106 +1,29 @@
 //
 //  ofxFBXMeshMaterial.cpp
-//  ofxFBX-Example-Importer
+//  example-BoneControl
 //
-//  Created by Nick Hardeman on 10/31/13.
-//
+//  Created by Nick Hardeman on 7/15/19.
 //
 
 #include "ofxFBXMeshMaterial.h"
 
 //--------------------------------------------------------------
-ofxFBXMeshMaterial::ofxFBXMeshMaterial() {
-    texture = NULL;
-    _name   = "default material";
-    enableTextures();
-    enableMaterials();
-    enable();
+void ofxFBXMeshMaterial::setup( ofxFBXSource::MeshMaterial* aSrcMat ) {
+    setEmissiveColor( aSrcMat->getEmissiveColor() );
+    setAmbientColor( aSrcMat->getAmbientColor() );
+    setDiffuseColor( aSrcMat->getDiffuseColor() );
+    setSpecularColor( aSrcMat->getSpecularColor() );
+    setShininess( aSrcMat->getShininess() );
+    _name = aSrcMat->getName();
+    
+    if( aSrcMat->hasTexture() ) {
+        mSrcTexture = aSrcMat->getTexturePtr();
+    }
 }
 
 //--------------------------------------------------------------
-void ofxFBXMeshMaterial::setup( const FbxSurfaceMaterial * pMaterial ) {
-    ofFloatColor tEmissive = getMaterialProperty( pMaterial, FbxSurfaceMaterial::sEmissive, FbxSurfaceMaterial::sEmissiveFactor );
-    ofFloatColor tAmbient = getMaterialProperty( pMaterial, FbxSurfaceMaterial::sAmbient, FbxSurfaceMaterial::sAmbientFactor );
-    ofFloatColor tDiffuse = getMaterialProperty( pMaterial, FbxSurfaceMaterial::sDiffuse, FbxSurfaceMaterial::sDiffuseFactor );
-    ofFloatColor tSpecular = getMaterialProperty( pMaterial, FbxSurfaceMaterial::sSpecular, FbxSurfaceMaterial::sSpecularFactor );
-    float shininess = 0;
-    FbxProperty lShininessProperty = pMaterial->FindProperty(FbxSurfaceMaterial::sShininess);
-    if (lShininessProperty.IsValid()) {
-        double lShininess = lShininessProperty.Get<FbxFloat>();
-        shininess = lShininess;
-    }
-    
-    setEmissiveColor( tEmissive );
-    setAmbientColor( tAmbient );
-    setDiffuseColor( tDiffuse );
-    setSpecularColor( tSpecular );
-    setShininess( shininess );
-    
-    _name = pMaterial->GetName();
-    
-//    cout << "-- " << pMaterial->GetName() << " -- setup -------------------------" << endl;
-//    cout << "emissive = " << tEmissive << endl;
-//    cout << "ambient = " << tAmbient << endl;
-//    cout << "diffuse = " << tDiffuse << endl;
-//    cout << "specular = " << tSpecular << endl;
-//    cout << "shininess = " << shininess << endl;
-    
-    const int lTextureCount = pMaterial->GetSrcObjectCount<FbxFileTexture>();
-    ofLogVerbose("ofxFBXMeshMaterial::setup") << pMaterial->GetName() << " texture count = " << lTextureCount;
-    
-    // pMaterial->GetClassId().Is(KFbxSurfacePhong::ClassId)
-    
-    // search for a texture based on the material properties :)
-	if (!hasTexture()) {
-		findTextureForProperty(pMaterial, FbxSurfaceMaterial::sShadingModel);
-	}
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sEmissive );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sAmbient );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sDiffuse );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sSpecular );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sNormalMap );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sBump );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sDisplacementColor );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sMultiLayer );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sReflection );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sShadingModel );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sShininess );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sTransparentColor );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sVectorDisplacementColor );
-    }
-    if(!hasTexture()) {
-        findTextureForProperty( pMaterial, FbxSurfaceMaterial::sMultiLayer );
-    }
-    
-    
-//    cout << "Do we have a texture for this material? " << hasTexture() << endl;
-    
-    if( hasTexture() ) enableTextures();
+void ofxFBXMeshMaterial::setTexture( shared_ptr<ofTexture> aUserTex ) {
+    mUserTex = aUserTex;
 }
 
 //--------------------------------------------------------------
@@ -108,8 +31,12 @@ void ofxFBXMeshMaterial::begin() {
     if( !isEnabled() ) return;
     if( areMaterialsEnabled() ) ofMaterial::begin();
     if( hasTexture() && areTexturesEnabled() ) {
-        glEnable( GL_TEXTURE_2D );
-        glBindTexture(GL_TEXTURE_2D, texture->getTextureData().textureID);
+//        cout << "ofxFBXMeshMaterial :: " << getName() << " binding the texture " << areMaterialsEnabled() << endl;
+//        glEnable( GL_TEXTURE_2D );
+//        glBindTexture(GL_TEXTURE_2D, texture->getTextureData().textureID);
+//        mSrcTexture->bind();
+        if( mUserTex && mUserTex->isAllocated() ) mUserTex->bind();
+        else if( mSrcTexture && mSrcTexture->isAllocated() ) mSrcTexture->bind();
     }
 }
 
@@ -118,19 +45,42 @@ void ofxFBXMeshMaterial::end() {
     if( !isEnabled() ) return;
     if( areMaterialsEnabled() ) ofMaterial::end();
     if( hasTexture() && areTexturesEnabled() ) {
-        glBindTexture( GL_TEXTURE_2D, 0);
-        glDisable( GL_TEXTURE_2D );
+        if( mUserTex && mUserTex->isAllocated() ) mUserTex->unbind();
+        else if( mSrcTexture && mSrcTexture->isAllocated() ) mSrcTexture->unbind();
+//        mSrcTexture->unbind();
+//        glBindTexture( GL_TEXTURE_2D, 0);
+//        glDisable( GL_TEXTURE_2D );
     }
 }
 
 //--------------------------------------------------------------
 bool ofxFBXMeshMaterial::hasTexture() {
-    return texture != NULL;
+//    return mSrcTexture != NULL;
+    if( mUserTex ) return true;
+    if( mSrcTexture ) return true;
+    return false;//texture;// != NULL;
 }
 
 //--------------------------------------------------------------
-ofxFBXTexture* ofxFBXMeshMaterial::getTexturePtr() {
-    return texture;
+bool ofxFBXMeshMaterial::hasSourceTexture() {
+    if( mSrcTexture ) return true;
+    return false;
+}
+
+//--------------------------------------------------------------
+bool ofxFBXMeshMaterial::hasUserTexture() {
+    if( mUserTex ) return true;
+    return false;
+}
+
+//--------------------------------------------------------------
+shared_ptr<ofTexture> ofxFBXMeshMaterial::getUserTexture() {
+    return mUserTex;
+}
+
+//--------------------------------------------------------------
+shared_ptr<ofxFBXSource::MeshTexture> ofxFBXMeshMaterial::getSrcTexture() {
+    return mSrcTexture;
 }
 
 //--------------------------------------------------------------
@@ -192,72 +142,8 @@ string ofxFBXMeshMaterial::getInfoAsString() {
     ss << "diffuse = " << getDiffuseColor() << endl;
     ss << "specular = " << getSpecularColor() << endl;
     ss << "shininess = " << getShininess() << endl;
-    ss << "texture = " << _textureName << " enabled: " << areTexturesEnabled() << " has texture: " << hasTexture() << endl;
+    // lets determine if there is a pointer to the src texture //
+//    ss << "texture = " << _textureName << " enabled: " << areTexturesEnabled() << " has texture: " << hasTexture() << endl;
     
     return ss.str();
 }
-
-//--------------------------------------------------------------
-ofFloatColor ofxFBXMeshMaterial::getMaterialProperty(const FbxSurfaceMaterial * pMaterial,
-                                 const char * pPropertyName,
-                                 const char * pFactorPropertyName ) {
-    FbxDouble3 lResult(0, 0, 0);
-    const FbxProperty lProperty = pMaterial->FindProperty(pPropertyName);
-    const FbxProperty lFactorProperty = pMaterial->FindProperty(pFactorPropertyName);
-    if (lProperty.IsValid() && lFactorProperty.IsValid()) {
-        lResult = lProperty.Get<FbxDouble3>();
-        double lFactor = lFactorProperty.Get<FbxDouble>();
-        if (lFactor != 1) {
-            lResult[0] *= lFactor;
-            lResult[1] *= lFactor;
-            lResult[2] *= lFactor;
-        }
-    }
-    ofFloatColor tcolor;
-    tcolor.set( lResult[0], lResult[1], lResult[2] );
-    return tcolor;
-}
-
-//--------------------------------------------------------------
-bool ofxFBXMeshMaterial::findTextureForProperty(const FbxSurfaceMaterial * pMaterial,
-                                                const char * pPropertyName ) {
-    
-    const FbxProperty lProperty = pMaterial->FindProperty(pPropertyName);
-    
-    if (lProperty.IsValid()) {
-        const int lTextureCount     = lProperty.GetSrcObjectCount<FbxFileTexture>();
-        const int lLTextureCount    = lProperty.GetSrcObjectCount<FbxLayeredTexture>();
-        ofLogVerbose("ofxFBXMeshMaterial::findTextureForProperty") << pPropertyName << " is a valid property with texture count of " << lTextureCount << " layered texture = " << lLTextureCount;
-        if (lTextureCount) {
-            const FbxFileTexture* lTexture = lProperty.GetSrcObject<FbxFileTexture>();
-            if (lTexture && lTexture->GetUserDataPtr()) {
-                _textureName = lTexture->GetName();
-                texture = static_cast<ofxFBXTexture *>( lTexture->GetUserDataPtr() );
-                return true;
-            }
-        }
-        
-        if (lLTextureCount) {
-            const FbxLayeredTexture* lLTexture = lProperty.GetSrcObject<FbxLayeredTexture>();
-            if( lLTexture ) {
-                const FbxFileTexture* lTexture = lLTexture->GetSrcObject<FbxFileTexture>();
-                ofLogVerbose("ofxFBXMeshMaterial::findTextureForProperty") << "-------> Layered " << pPropertyName << " layered texture = " << lLTextureCount;
-                if (lTexture && lTexture->GetUserDataPtr()) {
-                    _textureName = lTexture->GetName();
-                    texture = static_cast<ofxFBXTexture *>( lTexture->GetUserDataPtr() );
-                    return true;
-                }
-            }
-        }
-        
-    } else {
-//        cout << pPropertyName << " is NOT a valid property " << endl;
-    }
-    
-    return false;
-}
-
-
-
-
-

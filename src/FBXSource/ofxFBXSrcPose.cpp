@@ -5,17 +5,19 @@
 //  Created by Nick Hardeman on 9/22/14.
 //
 
-#include "ofxFBXPose.h"
+#include "ofxFBXSrcPose.h"
+
+using namespace ofxFBXSource;
 
 //--------------------------------------------------------------
-ofxFBXPose::ofxFBXPose() {
+Pose::Pose() {
     name        = "default";
     fbxIndex    = 0;
     fbxPose     = NULL;
 }
 
 //--------------------------------------------------------------
-void ofxFBXPose::setup( FbxPose* aPose, int aFbxIndex ) {
+void Pose::setup( FbxPose* aPose, int aFbxIndex ) {
     fbxPose     = aPose;
     if( fbxPose != NULL ) {
         name        = fbxPose->GetName();
@@ -24,28 +26,28 @@ void ofxFBXPose::setup( FbxPose* aPose, int aFbxIndex ) {
 }
 
 //--------------------------------------------------------------
-string ofxFBXPose::getName() {
+string Pose::getName() {
     return name;
 }
 
 //--------------------------------------------------------------
-int ofxFBXPose::getFbxIndex() {
+int Pose::getFbxIndex() {
     return fbxIndex;
 }
 
 //--------------------------------------------------------------
-FbxPose* ofxFBXPose::getFbxPose() {
+FbxPose* Pose::getFbxPose() {
     return fbxPose;
 }
 
 //--------------------------------------------------------------
-bool ofxFBXPose::isBindPose() {
+bool Pose::isBindPose() {
     if( fbxPose == NULL ) return false;
     return fbxPose->IsBindPose();
 }
 
 //--------------------------------------------------------------
-bool ofxFBXPose::isRestPose() {
+bool Pose::isRestPose() {
     if( fbxPose == NULL ) return false;
     return fbxPose->IsRestPose();
 }

@@ -6,11 +6,14 @@
 //
 //
 
-#include "ofxFBXCluster.h"
+#include "ofxFBXSrcCluster.h"
+#include "ofxFBXUtils.h"
+
+using namespace ofxFBXSource;
 
 // from the ViewScene example //
 // cache the matrices if we are not doing animation //
-void ofxFBXCluster::setup(FbxAMatrix& pGlobalPosition,
+void Cluster::setup(FbxAMatrix& pGlobalPosition,
                           FbxMesh* pMesh,
                           FbxCluster* pCluster ) {
 //    FbxAMatrix lReferenceGlobalInitPosition;
@@ -98,7 +101,7 @@ void ofxFBXCluster::setup(FbxAMatrix& pGlobalPosition,
 }
 
 
-void ofxFBXCluster::update( FbxTime& pTime , FbxPose* pPose ) {
+void Cluster::update( FbxTime& pTime , FbxPose* pPose ) {
     FbxCluster::ELinkMode lClusterMode = cluster->GetLinkMode();
     if (lClusterMode == FbxCluster::eAdditive && cluster->GetAssociateModel()) {
         cout << "ofxFBXCluster :: update : cluster mode is eAdditive " << endl;

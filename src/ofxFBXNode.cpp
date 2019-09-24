@@ -12,7 +12,7 @@
 ofxFBXNode::ofxFBXNode() {
 //    parent          = NULL;
 //    globalParent    = NULL;
-    origScale = glm::vec3(1,1,1);
+//    origScale = glm::vec3(1,1,1);
 }
 
 //----------------------------------------
@@ -20,11 +20,36 @@ ofxFBXNode::~ofxFBXNode() {
     if( getParent() != NULL ) {
         clearParent();
     }
+    if( mParentNode ) {
+        mParentNode.reset();
+    }
+    clearChildren();
 }
 
 //----------------------------------------
-void ofxFBXNode::setup( FbxNode *pNode ) {
-    setName( pNode->GetNameOnly() );
+ofxFBXSource::Node::NodeType ofxFBXNode::getType() {
+    return ofxFBXSource::Node::OFX_FBX_NULL;
+}
+
+//----------------------------------------
+void ofxFBXNode::setup( shared_ptr<ofxFBXSource::Node> anode ) {
+    name = anode->getName();
+    mSrcNode = anode;
+    if( mSrcNode ) {
+        setTransform( anode );
+    }
+}
+
+//----------------------------------------
+void ofxFBXNode::setTransform( shared_ptr<ofxFBXSource::Node> anode ) {
+    setTransform( anode.get() );
+}
+
+//----------------------------------------
+void ofxFBXNode::setTransform( ofxFBXSource::Node* anode ) {
+    setPosition( anode->getPosition() );
+    setOrientation( anode->getOrientationQuat() );
+    setScale( anode->getScale() );
 }
 
 //----------------------------------------
@@ -33,203 +58,207 @@ string ofxFBXNode::getName() {
 }
 
 //----------------------------------------
-FbxString ofxFBXNode::getFbxName() {
-    return FbxString( name.c_str() );
+string ofxFBXNode::getFbxTypeString() {
+    if(mSrcNode) {
+        return mSrcNode->getFbxTypeString();
+    }
+    return "Unknown";
 }
 
 //----------------------------------------
-void ofxFBXNode::setName( FbxString aName ) {
-    name = aName;
-}
-
-//--------------------------------------------------------------
-void ofxFBXNode::setUseKeyFrames( bool ab ) {
-    bUseKeyFrames = ab;
-}
-
-//--------------------------------------------------------------
-bool ofxFBXNode::usingKeyFrames() {
-    return bUseKeyFrames;
-}
-
-//--------------------------------------------------------------
-void ofxFBXNode::clearKeyFrames() {
-    mKeyCollections.clear();
-}
-
-//--------------------------------------------------------------
-void ofxFBXNode::cacheStartTransforms() {
-    // cache the orientations for use later //
-    origGlobalRotation  = getGlobalOrientation();
-    origLocalRotation   = getOrientationQuat();
-    origGlobalTransform = getGlobalTransformMatrix();
-    origLocalTransform  = getLocalTransformMatrix();
-    origPos             = getPosition();
-    origScale           = getScale();
+void ofxFBXNode::setParentNode( shared_ptr<ofxFBXNode> anode ) {
+    mParentNode = anode;
 }
 
 //----------------------------------------
-void ofxFBXNode::update( int aAnimIndex, signed long aMillis ) {
-    if( aAnimIndex < 0 ) return;
-    if( mKeyCollections.size() == 0 ) return;
-    if( aAnimIndex >= mKeyCollections.size() ) return;
-    
-    ofVec3f tpos = getKeyTranslation( aAnimIndex, aMillis );
-    ofVec3f cpos = getPosition();
-    if( cpos.x != tpos.x || cpos.y != tpos.y || cpos.z != tpos.z ) {
-        setPosition( tpos );
-    }
-    
-    ofVec3f tscale = getKeyScale( aAnimIndex, aMillis );
-    ofVec3f cscale = getScale();
-    if( cscale.x != tscale.x || cscale.y != tscale.y || cscale.z != tscale.z ) {
-        setScale( tscale );
-    }
-    
-    ofQuaternion tquat = getKeyRotation( aAnimIndex, aMillis );
-    ofQuaternion cquat = getOrientationQuat();
-    if( cquat.x() != tquat.x() || cquat.y() != tquat.y() || cquat.z() != tquat.z() || cquat.w() != tquat.w() ) {
-        setOrientation( tquat );
-    }
+bool ofxFBXNode::hasParentNode() {
+    if( !mParentNode ) return false;
+    return true;
 }
 
 //----------------------------------------
-void ofxFBXNode::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
-    if( mKeyCollections.size() == 0 ) return;
-    if( aAnimIndex1 < 0 ) return;
-    if( aAnimIndex1 >= mKeyCollections.size() ) return;
-    if( aAnimIndex2 < 0 ) return;
-    if( aAnimIndex2 >= mKeyCollections.size() ) return;
-    
-    aMixPct = ofClamp(aMixPct, 0.0, 1.0);
-    float invpct = 1.0 - aMixPct;
-    
-    ofVec3f tpos1 = getKeyTranslation( aAnimIndex1, aAnim1Millis );
-    ofVec3f tpos2 = getKeyTranslation( aAnimIndex2, aAnim2Millis);
-    
-    ofVec3f tscale1 = getKeyScale( aAnimIndex1, aAnim1Millis );
-    ofVec3f tscale2 = getKeyScale( aAnimIndex2, aAnim2Millis );
-    
-    ofQuaternion tquat1 = getKeyRotation( aAnimIndex1, aAnim1Millis );
-    ofQuaternion tquat2 = getKeyRotation( aAnimIndex2, aAnim2Millis );
-    
-    
-    if( aMixPct <= 0.0f ) {
-        setPosition( tpos1 );
-        setScale(tscale1);
-        setOrientation(tquat1);
-    } else if( aMixPct >= 1.0 ) {
-        setPosition( tpos2 );
-        setScale(tscale2);
-        setOrientation(tquat2);
+shared_ptr<ofxFBXNode> ofxFBXNode::getParentNode() {
+    return mParentNode;
+}
+
+//----------------------------------------
+void ofxFBXNode::clearChildren() {
+    mKids.clear();
+}
+
+//----------------------------------------
+void ofxFBXNode::addChild( shared_ptr<ofxFBXNode> akiddo ) {
+    mKids.push_back( akiddo );
+}
+
+//----------------------------------------
+int ofxFBXNode::getNumChildren() {
+    return mKids.size();
+}
+
+//----------------------------------------
+vector< shared_ptr<ofxFBXNode> >& ofxFBXNode::getChildren() {
+    return mKids;
+}
+
+//--------------------------------------------------------------
+string ofxFBXNode::getAsString( int aLevel ) {
+    stringstream oStr;// = "";
+    for( int i = 0; i < aLevel; i++ ) {
+        oStr << "  ";
+    }
+    if( aLevel > 0 ) {
+        oStr <<" '";
+    }
+    if( mKids.size() ) {
+        oStr << "+ ";
     } else {
-        setPosition( tpos1 * invpct + tpos2 * aMixPct );
-        setScale( tscale1 * invpct + tscale2 * aMixPct );
-        tquat1.slerp( aMixPct, tquat1, tquat2 );
-        setOrientation( tquat1 );
+        oStr << "- ";
     }
+//    string pname = "";
+//    if( getParent() != NULL ) {
+//        pname = " parent: " + parentBoneName;
+//    }
+    
+    if( !mSrcNode ) {
+        return oStr.str();
+    }
+    
+    oStr << mSrcNode->getTypeAsString() << ": " << getName() << " fbx type: " << mSrcNode->getFbxTypeString();
+    if( getNumChildren() > 0 ) {
+        oStr << " kids: " << mKids.size();
+    }
+//    if(mSrcNode->usingKeyFrames()) {
+//        oStr << " num keys: " << mSrcNode->getKey.size();
+//    }
+    oStr << endl;// "\n";
+    
+    for( auto& kid : mKids ) {
+        oStr << kid->getAsString( aLevel + 1);
+    }
+    
+    return oStr.str();
 }
 
-//----------------------------------------
-ofVec3f ofxFBXNode::getKeyTranslation( int aAnimIndex, signed long aMillis ) {
-    if( aAnimIndex < 0 ) return origPos;
-    if( mKeyCollections.size() == 0 ) return origPos;
-    if( aAnimIndex >= mKeyCollections.size() ) return origPos;
-    
-    ofxFBXKeyCollection& tcollection = mKeyCollections[aAnimIndex];
-    mAnimIndex = aAnimIndex;
-    ofVec3f tpos = origPos;
-    if(tcollection.posKeysX.size() > 0) tpos.x = getKeyValue( tcollection.posKeysX, aMillis );
-    if(tcollection.posKeysY.size() > 0) tpos.y = getKeyValue( tcollection.posKeysY, aMillis );
-    if(tcollection.posKeysZ.size() > 0) tpos.z = getKeyValue( tcollection.posKeysZ, aMillis );
-    return tpos;
-}
-
-//----------------------------------------
-ofQuaternion ofxFBXNode::getKeyRotation( int aAnimIndex, signed long aMillis ) {
-    if( aAnimIndex < 0 ) return origLocalRotation;
-    if( mKeyCollections.size() == 0 ) return origLocalRotation;
-    if( aAnimIndex >= mKeyCollections.size() ) return origLocalRotation;
-    
-    ofxFBXKeyCollection& tcollection = mKeyCollections[aAnimIndex];
-    mAnimIndex = aAnimIndex;
-    
-    return getKeyRotation( tcollection.rotKeys, aMillis );
-}
-
-//----------------------------------------
-ofVec3f ofxFBXNode::getKeyScale( int aAnimIndex, signed long aMillis ) {
-    if( aAnimIndex < 0 ) return origScale;
-    if( mKeyCollections.size() == 0 ) return origScale;
-    if( aAnimIndex >= mKeyCollections.size() ) return origScale;
-    
-    ofxFBXKeyCollection& tcollection = mKeyCollections[aAnimIndex];
-    mAnimIndex = aAnimIndex;
-    
-    ofVec3f tscale = origScale;
-    if(tcollection.scaleKeysX.size() > 0) tscale.x = getKeyValue( tcollection.scaleKeysX, aMillis );
-    if(tcollection.scaleKeysY.size() > 0) tscale.y = getKeyValue( tcollection.scaleKeysY, aMillis );
-    if(tcollection.scaleKeysZ.size() > 0) tscale.z = getKeyValue( tcollection.scaleKeysZ, aMillis );
-    
-    return tscale;
-}
-
-//----------------------------------------
-// from Arturo Castro's ofxFBX ///
-float ofxFBXNode::getKeyValue( vector<ofxFBXKey<float> >& keys, signed long ms ) {
-    for(int i=0;i<keys.size();i++){
-        if(keys[i].millis==ms){
-            return keys[i].value;
-        }else if(keys[i].millis>ms){
-            if(i>0){
-                signed long delta = ms - keys[i-1].millis;
-                float pct = double(delta) / double(keys[i].millis - keys[i-1].millis);
-                return ofLerp(keys[i-1].value,keys[i].value,pct);
-            }else{
-                return keys[0].value;
-                //u_long delta = ms;
-                //float pct = double(delta) / double(keys[i].millis);
-                //return ofLerp(0.0f,keys[i].value,pct);
+#pragma mark - Search
+//--------------------------------------------------------------
+shared_ptr<ofxFBXNode> ofxFBXNode::getNodeforName( shared_ptr<ofxFBXNode>& aBSelf, string aPath, bool bStrict ) {
+    vector< string > tsearches;
+    if( ofIsStringInString( aPath, ":" ) ) {
+        tsearches = ofSplitString( aPath, ":" );
+    } else {
+        tsearches.push_back( aPath );
+        if(aBSelf) {
+            if(bStrict) {
+                if( aBSelf->getName() == aPath ) {
+//                    cout << "FOUND SELF" << endl;
+                    return aBSelf;
+                }
+            } else {
+                if( ofIsStringInString( aBSelf->getName(), aPath )) {
+//                    cout << "FOUND SELF" << endl;
+                    return aBSelf;
+                }
             }
         }
     }
-    if(keys.empty()){
-        return 0.0f;
-    }else{
-        return keys.back().value;
-    }
-    return 0.0f;
+    
+    shared_ptr<ofxFBXNode> temp;// = aBSelf;
+    _getNodeForNameRecursive( tsearches, temp, mKids, bStrict );
+    return temp;
 }
 
-//----------------------------------------
-// from Arturo Castro's ofxFBX ///
-ofQuaternion ofxFBXNode::getKeyRotation(vector<ofxFBXKey<ofQuaternion> >& keys, signed long ms) {
-    for(int i=0;i<keys.size();i++){
-        if(keys[i].millis==ms){
-            return keys[i].value;
-        }else if(keys[i].millis>ms){
-            if(i>0){
-                signed long delta = ms - keys[i-1].millis;
-                float pct = double(delta) / double(keys[i].millis - keys[i-1].millis);
-                ofQuaternion q;
-                q.slerp(pct,keys[i-1].value,keys[i].value);
-                return q;
-            }else{
-                signed long delta = ms;
-                float pct = double(delta) / double(keys[i].millis);
-                ofQuaternion q = keys[i].value;
-                q.slerp(pct,origLocalRotation,keys[i].value);
-                return q;
+//--------------------------------------------------------------
+shared_ptr<ofxFBXNode> ofxFBXNode::getKidforName( string aPath, bool bStrict ) {
+    
+    vector< string > tsearches;
+    if( ofIsStringInString( aPath, ":" ) ) {
+        tsearches = ofSplitString( aPath, ":" );
+    } else {
+        tsearches.push_back( aPath );
+    }
+    
+    shared_ptr<ofxFBXNode> temp;
+    _getNodeForNameRecursive( tsearches, temp, mKids, bStrict );
+    return temp;
+}
+
+//--------------------------------------------------------------
+void ofxFBXNode::_getNodeForNameRecursive( vector<string>& aNamesToFind, shared_ptr<ofxFBXNode>& aTarget, vector< shared_ptr<ofxFBXNode> >& aElements, bool bStrict ) {
+    
+    for( int i = 0; i < aElements.size(); i++ ) {
+        bool bFound = false;
+        if(bStrict) {
+            if( aElements[i]->getName() == aNamesToFind[0] ) {
+                bFound = true;
+            }
+        } else {
+            if( ofIsStringInString( aElements[i]->getName(), aNamesToFind[0] )) {
+//                cout << "Found--- " << aNamesToFind[0] << " num names: " << aNamesToFind.size() << endl;
+                bFound = true;
+            }
+        }
+        
+        if( bFound == true ) {
+            aNamesToFind.erase( aNamesToFind.begin() );
+            if( aNamesToFind.size() == 0 ) {//}|| aElements[i]->getNumChildren() < 1 ) {
+                bool bgood = false;
+                if( aElements[i] ) {
+                    bgood = true;
+                }
+//                cout << "going to return one of the elements " << aNamesToFind.size() << " good: " << bgood << " " << endl;
+                aTarget = aElements[i];
+                break;
+            } else {
+                if( aElements[i]->getNumChildren() > 0 ) {
+//                    shared_ptr<ofxFBXNode> tgroup = dynamic_pointer_cast< ofxSvgGroup >( aElements[i] );
+                    _getNodeForNameRecursive( aNamesToFind, aTarget, aElements[i]->getChildren(), bStrict );
+                    break;
+                }
             }
         }
     }
-    if(keys.empty()){
-        return origLocalRotation;
-    }else{
-        return keys.back().value;
-    }
-    return origLocalRotation;
 }
 
+//--------------------------------------------------------------
+void ofxFBXNode::_getKidsForTypeRecursive( int atype, string aNameToContain, vector< shared_ptr<ofxFBXNode> >& aFoundElements, vector< shared_ptr<ofxFBXNode> >& aElements ) {
+    
+    for( int i = 0; i < aElements.size(); i++ ) {
+        
+        if( aElements[i]->getType() == atype ) {
+            bool bFound = false;
+            if( aNameToContain != "" ) {
+                if( ofIsStringInString( aElements[i]->getName(), aNameToContain )) {
+                    bFound = true;
+                }
+            } else {
+                bFound = true;
+            }
+            if( bFound ) {
+                aFoundElements.push_back( aElements[i] );
+            }
+        }
+        
+        if( aElements[i]->getNumChildren() > 0 ) {
+            _getKidsForTypeRecursive( atype, aNameToContain, aFoundElements, aElements[i]->getChildren() );
+        }
+    }
+}
 
+//--------------------------------------------------------------
+vector< shared_ptr<ofxFBXNode> > ofxFBXNode::getAllChildren() {
+    vector< shared_ptr<ofxFBXNode> > rnodes;
+    _getKidsRecursive( rnodes, mKids );
+    return rnodes;
+}
 
+//--------------------------------------------------------------
+void ofxFBXNode::_getKidsRecursive( vector< shared_ptr<ofxFBXNode> >& aFoundElements, vector< shared_ptr<ofxFBXNode> >& aElements ) {
+    for( int i = 0; i < aElements.size(); i++ ) {
+        aFoundElements.push_back( aElements[i] );
+        
+        if( aElements[i]->getNumChildren() > 0 ) {
+            _getKidsRecursive( aFoundElements, aElements[i]->getChildren() );
+        }
+    }
+}

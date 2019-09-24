@@ -11,20 +11,7 @@
 #include "ofMain.h"
 #include <fbxsdk.h>
 #include "ofxFBXUtils.h"
-
-template<class T>
-struct ofxFBXKey {
-    T value;
-    signed long millis;
-};
-
-class ofxFBXKeyCollection {
-public:
-    string name;
-    vector< ofxFBXKey<float> > posKeysX, posKeysY, posKeysZ;
-    vector< ofxFBXKey<ofQuaternion> > rotKeys;
-    vector< ofxFBXKey<float> > scaleKeysX, scaleKeysY, scaleKeysZ;
-};
+#include "ofxFBXSrcNode.h"
 
 class ofxFBXNode : public ofNode {
 public:
@@ -32,57 +19,96 @@ public:
     ofxFBXNode();
     ~ofxFBXNode();
     
-    void setup( FbxNode *pNode );
+    virtual ofxFBXSource::Node::NodeType getType();
+    
+    virtual void setup( shared_ptr<ofxFBXSource::Node> anode );
+    
+    void setTransform( shared_ptr<ofxFBXSource::Node> anode );
+    void setTransform( ofxFBXSource::Node* anode );
+    
     string getName();
-    FbxString getFbxName();
-    void setName( FbxString aName );
     
-    void setUseKeyFrames( bool ab );
-    bool usingKeyFrames();
-    virtual void clearKeyFrames();
+    virtual void update( FbxTime& pTime, FbxPose* pPose ) {}
+    virtual void update( int aAnimIndex, signed long aMillis ) {}
+    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {}
     
-    void cacheStartTransforms();
     
-    virtual void update( int aAnimIndex, signed long aMillis );
-    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
+    virtual void update() {}
+    virtual void lateUpdate( FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose  ) {}
     
-    ofVec3f getKeyTranslation( int aAnimIndex, signed long aMillis );
-    ofQuaternion getKeyRotation( int aAnimIndex, signed long aMillis );
-    ofVec3f getKeyScale( int aAnimIndex, signed long aMillis );
+    shared_ptr<ofxFBXSource::Node> getofxFbxSrcNode() { return mSrcNode; }
+    FbxNode* getFbxNode() { return mSrcNode->getFbxNode(); }
+    string getFbxTypeString();
     
-    float getKeyValue( std::vector<ofxFBXKey<float> >& keys, signed long ms );
-    ofQuaternion getKeyRotation(vector<ofxFBXKey<ofQuaternion> >& keys, signed long ms);
+    void setParentNode( shared_ptr<ofxFBXNode> anode );
+    bool hasParentNode();
+    shared_ptr<ofxFBXNode> getParentNode();
     
-    ofxFBXKeyCollection& getKeyCollection( int aAnimIndex ) {
-        if( mKeyCollections.count(aAnimIndex) < 1 ) {
-            ofxFBXKeyCollection temp;
-            mKeyCollections[ aAnimIndex ] = temp;
+    void clearChildren();
+    void addChild( shared_ptr<ofxFBXNode> akiddo );
+    int getNumChildren();
+    vector< shared_ptr<ofxFBXNode> >& getChildren();
+    
+    virtual string getAsString( int aLevel=0 );
+    
+    // pass in a ref to this
+    shared_ptr<ofxFBXNode> getNodeforName( shared_ptr<ofxFBXNode>& aBSelf, string aPath, bool bStrict );
+    shared_ptr<ofxFBXNode> getKidforName( string aPath, bool bStrict );
+    
+    template<typename ofxFBXNodeType>
+    shared_ptr<ofxFBXNodeType> get( string aPath, bool bStrict = false ) {
+        auto stemp = getKidforName( aPath, bStrict );
+        if( stemp ) {
+            return dynamic_pointer_cast<ofxFBXNodeType>( stemp );
         }
-        return mKeyCollections[aAnimIndex];
+        shared_ptr<ofxFBXNodeType> rtemp;
+        return rtemp;
     }
     
-    void setLocalTransformMatrix( FbxAMatrix ainput ) {
-        glm::vec3 tpos, tscale;
-        glm::quat trot;
+    template<typename ofxFBXNodeType>
+    vector< shared_ptr<ofxFBXNodeType> > getKidsForType() {
         
-        fbxToGlmComponents( ainput, tpos, trot, tscale );
+        auto stemp = make_shared<ofxFBXNodeType>();
+        int sType = stemp->getType();
         
-        setScale( tscale );
-        setPosition( tpos );
-        setOrientation( trot);
+        vector< shared_ptr<ofxFBXNodeType> > telements;
+        for( int i = 0; i < mKids.size(); i++ ) {
+            if( mKids[i]->getType() == sType ) {
+                telements.push_back( dynamic_pointer_cast<ofxFBXNodeType>(mKids[i]) );
+            }
+        }
+        return telements;
     }
+    
+    template<typename ofxFBXNodeType>
+    vector< shared_ptr<ofxFBXNodeType> > getAllKidsForType( string aNameToContain="" ) {
+        auto stemp = make_shared<ofxFBXNodeType>();
+        int sType = stemp->getType();
+        
+        vector< shared_ptr<ofxFBXNode> > tFoundNodes;
+        
+        _getKidsForTypeRecursive( sType, aNameToContain, tFoundNodes, mKids );
+        
+        vector< shared_ptr<ofxFBXNodeType> > tReturnNodes;
+        for( auto tfn : tFoundNodes ) {
+            tReturnNodes.push_back( dynamic_pointer_cast<ofxFBXNodeType>(tfn) );
+        }
+        return tReturnNodes;
+    }
+    
+    vector< shared_ptr<ofxFBXNode> > getAllChildren();
     
 protected:
-    glm::quat origLocalRotation, origGlobalRotation;
-    glm::mat4 origGlobalTransform;
-    glm::mat4 origLocalTransform;
+    void _getNodeForNameRecursive( vector<string>& aNamesToFind, shared_ptr<ofxFBXNode>& aTarget, vector< shared_ptr<ofxFBXNode> >& aElements, bool bStrict );
+    void _getKidsForTypeRecursive( int atype, string aNameToContain, vector< shared_ptr<ofxFBXNode> >& aFoundElements, vector< shared_ptr<ofxFBXNode> >& aElements );
+    void _getKidsRecursive( vector< shared_ptr<ofxFBXNode> >& aFoundElements, vector< shared_ptr<ofxFBXNode> >& aElements );
     
-    glm::vec3 origPos, origScale;
+    string name = "default";
+    vector< shared_ptr<ofxFBXNode> > mKids;
+    shared_ptr<ofxFBXNode> mParentNode;
     
-    string name = "";
-    int mAnimIndex = 0;
-    bool bUseKeyFrames = false;
-    map<int, ofxFBXKeyCollection> mKeyCollections;
+    shared_ptr<ofxFBXSource::Node> mSrcNode;
+    
 };
 
 

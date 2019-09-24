@@ -13,7 +13,9 @@ this software in either electronic or hard copy form.
 #define _GET_POSITION_H
 
 #include "fbxsdk.h"
-#include "ofMain.h"
+//#include "ofMain.h"
+
+namespace ofxFBXSource {
 
 FbxAMatrix GetGlobalPosition(FbxNode* pNode,
 							  const FbxTime& pTime, 
@@ -37,7 +39,7 @@ void MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue);
 // Sum two matrices element by element.
 void MatrixAdd(FbxAMatrix& pDstMatrix, FbxAMatrix& pSrcMatrix);
 
-
+}
 
 #endif // #ifndef _GET_POSITION_H
 

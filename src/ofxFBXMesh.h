@@ -7,115 +7,65 @@
 //
 
 #pragma once
-
 #define FBXSDK_NEW_API
-//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-//    #include <fbxsdk.h>
-//#endif
-//
-//#include "ofMain.h"
-//#if defined(TARGET_OSX)
-//    #include "fbxsdk.h"
-//#endif
-
-#include "ofMain.h"
-#include <fbxsdk.h>
-
 #include "ofVboMesh.h"
 #include "ofxFBXNode.h"
-#include "ofxFBXBone.h"
-#include "ofxFBXCluster.h"
+#include "ofxFBXSrcMesh.h"
 #include "ofxFBXMeshMaterial.h"
-
-class ofxFBXSubMesh {
-public:
-    
-    ofxFBXSubMesh() {
-        triangleCount   = 0;
-        indexOffset     = 0;
-        totalIndices    = 0;
-        materialPtr     = NULL;
-    }
-    
-    ~ofxFBXSubMesh() {
-        
-    }
-    
-    ofxFBXMeshMaterial* materialPtr;
-    bool bRender;
-    int triangleCount;
-    int indexOffset;
-    int totalIndices;
-};
 
 class ofxFBXMesh : public ofxFBXNode {
 public:
-	ofxFBXMesh();
-	virtual ~ofxFBXMesh();
     
-    void setup( FbxNode * pNode );
-	void setFBXMesh( FbxMesh* lMesh );
-    void configureMesh( ofMesh& aMesh );
+    ofxFBXSource::Node::NodeType getType() override;
     
-    void update( FbxTime& pTime, FbxPose* pPose );
-    virtual void update( int aAnimIndex, signed long aMillis );
-    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
+    void setup( shared_ptr<ofxFBXSource::Node> anode ) override;
     
-    void updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose  );
-
-	void draw( ofMesh* aMesh );
-    void drawNormals( ofMesh* aMesh, float length, bool bFaceNormals);
+    void update( FbxTime& pTime, FbxPose* pPose ) override;
+    void update( int aAnimIndex, signed long aMillis ) override;
+    void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) override;
     
-    FbxMesh* getFbxMesh() { return fbxMesh; }
-    int getNumSubMeshes();
+    void update() override;
+    void lateUpdate(FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose) override;
+    
+    void draw();
+    void drawWireframe();
+    void drawNormals( float length, bool bFaceNormals);
+    
+    ofVbo& getVbo();
+    ofMesh& getMesh();
     int getNumMaterials();
+    vector< shared_ptr<ofxFBXMeshMaterial> > getMaterials();
+    void setMaterialsEnabled(bool ab);
     
-    const vector<ofxFBXSubMesh>& getSubMeshes() const { return subMeshes; }
-    vector< ofxFBXMeshMaterial* > getMaterials();
-    
+    vector< shared_ptr<ofxFBXSource::MeshTexture> > getTextures();
     bool hasTexture();
-    vector< ofxFBXTexture* > getTextures();
     
-    bool hasClusterDeformation();
+    void setMeshDirty( bool ab ) { bMeshDirty=ab; }
+    void setBlendMeshFrames( bool ab ) { bBlendMeshFrames=ab; }
     
-	ofVbo& getVbo();
-    ofMesh& getOFMesh();
+    shared_ptr<ofxFBXSource::Mesh> getSourceMesh() { _checkSrcMesh(); return mSrcMesh; }
+    // returns a copy of the mesh with the vertices transformed into Global / World space //
+    ofMesh getGlobalMesh();
+    // returns a copy of the mesh with the vertices transformed into Global / World space around the position //
+    ofMesh getGlobalMeshAroundPosition();
+    // returns a
+    ofMesh getMeshAroundPositionScaleApplied();
 
 private:
+    void _checkSrcMesh();
     
-    void computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer );
-    void computeSkinDeformation( FbxAMatrix& pGlobalPosition, FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxVector4* pVertexArray, FbxVector4* pNormalsArray, FbxPose* pPose );
-    void computeLinearDeformation(FbxAMatrix& pGlobalPosition,
-                                  FbxMesh* pMesh,
-                                  FbxTime& pTime,
-                                  FbxVector4* pVertexArray,
-                                  FbxPose* pPose,
-                                  bool bNormals);
-    void computeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition,
-                                          FbxMesh* pMesh,
-                                          FbxTime& pTime,
-                                          FbxVector4* pVertexArray,
-                                          FbxPose* pPose,
-                                          bool bNormals);
-    void computeClusterDeformation(FbxAMatrix& pGlobalPosition,
-                                   FbxMesh* pMesh,
-                                   FbxCluster* pCluster,
-                                   FbxAMatrix& pVertexTransformMatrix,
-                                   FbxTime pTime,
-                                   FbxPose* pPose,
-                                   bool bNormals);
+    static ofVbo dummyVbo;
+    ofMesh mesh, normalsMesh;
+    shared_ptr<ofxFBXSource::Mesh> mSrcMesh;
     
-    void populateNormals( FbxVector4* pNormalsArray );
+    vector< shared_ptr<ofxFBXMeshMaterial> > mMaterials;
     
-    vector<ofxFBXSubMesh> subMeshes;
-    ofVbo veebs;
-	ofMesh mesh;
-	ofMesh original;
-	FbxMesh* fbxMesh;
-    FbxVector4* mNormalsArray;
-//    bool bAllMappedByControlPoint;
+    bool bHasTexture = false;
     
-    FbxGeometryElement::EMappingMode mNormalMappingMode = FbxGeometryElement::eNone;
-    
+    signed long mLastFbxTimeMillis = -99999;// = (unsigned int)fbxFrameTime.GetMilliSeconds();
+    bool bMeshDirty = false;
+    int mLastAnimIndex = 0;
+    bool bDrawMeshKeyframe = false;
+    bool bBlendMeshFrames = false;
 };
 

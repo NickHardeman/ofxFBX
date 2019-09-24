@@ -7,55 +7,43 @@
 //
 
 #pragma once
-
-#include "ofMain.h"
-#include <fbxsdk.h>
-//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-//    #include <fbxsdk.h>
-//#endif
-//#if defined(TARGET_OSX)
-//    #include "fbxsdk.h"
-//#endif
-#include "ofxFBXNode.h"
 #include "ofxFBXBone.h"
+#include "ofxFBXSrcSkeleton.h"
 #include <map>
 
 class ofxFBXSkeleton : public ofxFBXNode {
 public:
-    ofxFBXSkeleton();
-    ~ofxFBXSkeleton();
     
-    void setup( FbxNode *pNode );
-    void reconstructNodeParenting();
-    // get global transform update //
-    void update( FbxTime& pTime, FbxPose* pPose );
-    // keyframes update //
-    void update( int aAnimIndex, signed long aMillis );
-    void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
-    void lateUpdate();
+    ofxFBXSource::Node::NodeType getType() override;
     
-    void draw( float aLen = 6.f, bool aBDrawAxes = true );
+    void setup( shared_ptr<ofxFBXSource::Node> anode ) override;
+    void setupRoot( shared_ptr<ofxFBXNode> aparent );
     
-    ofxFBXBone* getBone( string aName );
+    void update( FbxTime& pTime, FbxPose* pPose ) override;
+    void update( int aAnimIndex, signed long aMillis ) override;
+    void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) override;
+    
+    void update() override;
+    void lateUpdate( FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose ) override;
+    
+    void draw( float aLen, bool aBDrawAxes );
+    
+    int getNumBones();
+    shared_ptr<ofxFBXBone> getBone( string aName );
+    
+    string getAsString( int aLevel=0 ) override;
     
     void enableAnimationForBone( string aName, bool bRecursive );
     void disableAnimationForBone( string aName, bool bRecursive );
-    
     void enableAnimation();
     void disableAnimation();
     
-    void clearKeyFrames();
-    
-    int getNumBones();
-    string toString();
-    
-    map< string, ofxFBXBone* > getAllBones();
-    
-    ofxFBXBone root;
-    ofxFBXBone* rootSource;
-    
 private:
+    shared_ptr<ofxFBXBone> root;
     
+    void _checkSrcSkel();
+    
+    shared_ptr<ofxFBXSource::Skeleton> mSrcSkel;
 };
 
 

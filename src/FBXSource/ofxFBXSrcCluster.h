@@ -9,18 +9,13 @@
 #pragma once
 #include "ofMain.h"
 #include <fbxsdk.h>
-//#if defined(TARGET_LINUX) && !defined(TARGET_OPENGLES)
-//    #include <fbxsdk.h>
-//#endif
-//#if defined(TARGET_OSX)
-//    #include "fbxsdk.h"
-//#endif
-#include "ofxFBXNode.h"
 
-class ofxFBXCluster {
+namespace ofxFBXSource {
+
+class Cluster {
 public:
-    ofxFBXCluster(){}
-    ~ofxFBXCluster() {}
+    Cluster(){}
+    ~Cluster() {}
     void setup( FbxAMatrix& pGlobalPosition,
                FbxMesh* pMesh,
                FbxCluster* pCluster );
@@ -28,9 +23,11 @@ public:
     
     FbxAMatrix origTransform;
     FbxAMatrix preTrans, postTrans;
-    FbxCluster* cluster;
-    FbxMesh* mesh;
+    FbxCluster* cluster = NULL;
+    FbxMesh* mesh = NULL;
 protected:
     FbxAMatrix lReferenceGlobalInitPosition;
     FbxAMatrix lAssociateGlobalInitPosition;
 };
+    
+}

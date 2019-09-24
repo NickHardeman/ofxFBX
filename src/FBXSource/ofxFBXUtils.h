@@ -13,6 +13,8 @@
 #include <fbxsdk.h>
 #include "GetPosition.h"
 
+namespace ofxFBXSource {
+
 // --- from Arturo Castro's ofxFBX -------
 inline glm::vec4 fbxToOf(const FbxVector4 & avec4){
 	return glm::vec4(avec4[0],avec4[1],avec4[2],avec4[3]);
@@ -76,18 +78,20 @@ inline FbxAMatrix toFbx( glm::vec3 apos, glm::quat arot, glm::vec3 ascale ) {
 }
 
 // -----------------------------------
-inline FbxAMatrix ofFbxGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
+inline FbxAMatrix fbxGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
     return GetGlobalPosition( pNode, pTime, pPose, pParentGlobalPosition);
 }
 
 // -----------------------------------
-inline glm::mat4 ofGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
+inline glm::mat4 glmGetGlobalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
     return fbxToOf( GetGlobalPosition( pNode, pTime, pPose, pParentGlobalPosition) );
 }
 
 // -----------------------------------
-inline glm::mat4 ofGetLocalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
+inline glm::mat4 glmGetLocalTransform( FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition=NULL ) {
     return fbxToOf( GetLocalPositionForNode( pNode, pTime, pPose, pParentGlobalPosition) );
+}
+    
 }
 
 

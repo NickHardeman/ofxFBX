@@ -18,10 +18,11 @@
 
 #include "GetPosition.h"
 
+using namespace ofxFBXSource;
 // Get the global position of the node for the current pose.
 // If the specified node is not part of the pose or no pose is specified, get its
 // global position at the current time.
-FbxAMatrix GetGlobalPosition(FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition)
+FbxAMatrix ofxFBXSource::GetGlobalPosition(FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition)
 {
     FbxAMatrix lGlobalPosition;
     bool        lPositionFound = false;
@@ -83,7 +84,7 @@ FbxAMatrix GetGlobalPosition(FbxNode* pNode, const FbxTime& pTime, FbxPose* pPos
 // Get the global position of the node for the current pose.
 // If the specified node is not part of the pose or no pose is specified, get its
 // global position at the current time.
-FbxAMatrix GetLocalPositionForNode(FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition) {
+FbxAMatrix ofxFBXSource::GetLocalPositionForNode(FbxNode* pNode, const FbxTime& pTime, FbxPose* pPose, FbxAMatrix* pParentGlobalPosition) {
     FbxAMatrix lLocalPosition;
     bool lPositionFound = false;
     
@@ -138,7 +139,7 @@ FbxAMatrix GetLocalPositionForNode(FbxNode* pNode, const FbxTime& pTime, FbxPose
 }
 
 // Get the matrix of the given pose
-FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
+FbxAMatrix ofxFBXSource::GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
 {
     FbxAMatrix lPoseMatrix;
     FbxMatrix lMatrix = pPose->GetMatrix(pNodeIndex);
@@ -149,7 +150,7 @@ FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
 }
 
 // Get the geometry offset to a node. It is never inherited by the children.
-FbxAMatrix GetGeometry(FbxNode* pNode)
+FbxAMatrix ofxFBXSource::GetGeometry(FbxNode* pNode)
 {
     const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
     const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
@@ -160,7 +161,7 @@ FbxAMatrix GetGeometry(FbxNode* pNode)
 
 
 // Scale all the elements of a matrix.
-void MatrixScale(FbxAMatrix& pMatrix, double pValue)
+void ofxFBXSource::MatrixScale(FbxAMatrix& pMatrix, double pValue)
 {
     int i,j;
     
@@ -175,7 +176,7 @@ void MatrixScale(FbxAMatrix& pMatrix, double pValue)
 
 
 // Add a value to all the elements in the diagonal of the matrix.
-void MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue)
+void ofxFBXSource::MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue)
 {
     pMatrix[0][0] += pValue;
     pMatrix[1][1] += pValue;
@@ -185,7 +186,7 @@ void MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue)
 
 
 // Sum two matrices element by element.
-void MatrixAdd(FbxAMatrix& pDstMatrix, FbxAMatrix& pSrcMatrix)
+void ofxFBXSource::MatrixAdd(FbxAMatrix& pDstMatrix, FbxAMatrix& pSrcMatrix)
 {
     int i,j;
     
