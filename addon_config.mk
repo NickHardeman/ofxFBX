@@ -60,4 +60,7 @@ common:
 	# a specific platform
 	# ADDON_LIBS_EXCLUDE =
 
+osx:
+	ADDON_LDFLAGS = -lxml2 -liconv
+
 
