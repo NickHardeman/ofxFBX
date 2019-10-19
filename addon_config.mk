@@ -62,5 +62,6 @@ common:
 
 osx:
 	ADDON_LDFLAGS = -lxml2 -liconv
+	ADDON_INCLUDES_EXCLUDE = libs/libfbxsdk_2019.5/include/libxml2/%
 
 
