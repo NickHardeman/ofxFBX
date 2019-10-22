@@ -666,7 +666,8 @@ void Mesh::draw( ofMesh* aMesh ) {
             //            cout << "lElementCount = " << lElementCount << " mesh is using indices = " << mesh.hasIndices() << endl;
             
 #ifdef TARGET_OPENGLES
-            glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, reinterpret_cast<const GLvoid *>(lOffset));
+            glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT,
+                           (void*)(sizeof(ofIndexType) * subMeshes[lIndex].indexOffset));
 #else
             glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
 #endif
