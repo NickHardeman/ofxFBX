@@ -3,10 +3,16 @@
 //--------------------------------------------------------------
 void ofApp::setup() {
     
+    ofSetBackgroundColor( 220 );
+    
+    ofSetLogLevel( OF_LOG_VERBOSE );
+    
     ofSetFrameRate(60);
     
     ofDisableArbTex();
-    ofLoadImage(teddyTex, "tex.png" );
+    if(!ofLoadImage(teddyTex, "tex.png" )) {
+        ofLogError("Could not load tex.png texture");
+    }
     
     ofxFBXSource::Scene::Settings settings;
     settings.importTextures = false;
@@ -37,6 +43,12 @@ void ofApp::setup() {
     fbxSmooth.setScale( 0.15 );
     fbxSmooth.setPosition( 150, 0, 0 );
 //    fbxSmooth.cacheMeshKeyframes(true);
+    
+    for( int i = 0; i < fbx.getNumMeshes(); i++ ) {
+        cout << i << " - " << " num tex coords: " << fbx.getMeshes()[i]->getMesh().getNumTexCoords() << endl;
+        
+    }
+    fbx.setMaterialsEnabled(false);
     
     bRenderNormals  = false;
 }
@@ -74,11 +86,15 @@ void ofApp::update() {
 void ofApp::draw() {
     
     ofSetColor(255, 255, 255);
+    // this causes the texture not to render on the models on iOS
+    #ifndef TARGET_OPENGLES
     ofBackgroundGradient( ofColor::white, ofColor::gray );
+    #endif
     
     ofEnableDepthTest();
     cam.begin(); {
-        
+        // this causes the texture not to render on the models on iOS
+        #ifndef TARGET_OPENGLES
         ofSetColor( 160 );
         ofPushMatrix(); {
             ofTranslate( 0, -150, 0 );
@@ -87,6 +103,7 @@ void ofApp::draw() {
         //    float stepSize = 1.25f, size_t numberOfSteps = 8, bool labels = false
             ofDrawGridPlane(40, 50, false );
         } ofPopMatrix();
+        #endif
         
         ofEnableLighting();
         light.enable();
