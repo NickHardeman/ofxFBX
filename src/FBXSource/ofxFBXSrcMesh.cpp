@@ -682,25 +682,11 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
         draw( aMesh );
         return;
     }
+    
+//    cout << "ofxFBXSrcMesh :: aMesh num verts: " << aMesh->getNumVertices() << " num tcoords: " << aMesh->getNumTexCoords() << " update veebs: " << bUpdateTheVeeeeebs << " veebs num verts: " << veebs.getNumVertices() << " | " << ofGetFrameNum() << endl;
 //        cout << "ofxFBXMesh :: " << getName() << " verts: " << aMesh->haveVertsChanged() << " indices: " << aMesh->haveIndicesChanged() << " normals: " << aMesh->haveNormalsChanged() << " tex coords: " << aMesh->haveTexCoordsChanged() << " colors: " << aMesh->haveColorsChanged() << " | " << ofGetFrameNum() << endl;
 //    veebs.updateMesh( *aMesh );
     
-//    updateVertexData(mesh.getVerticesPointer(),mesh.getNumVertices());
-//    updateColorData(mesh.getColorsPointer(),mesh.getNumColors());
-//    updateNormalData(mesh.getNormalsPointer(),mesh.getNumNormals());
-//    updateTexCoordData(mesh.getTexCoordsPointer(),mesh.getNumTexCoords());
-    
-//    if(aMesh->haveVertsChanged()){
-//        if(getNumVertices()==0){
-//            vbo.clearVertices();
-//            vboNumVerts = getNumVertices();
-//        }else if(vboNumVerts<getNumVertices()){
-//            vbo.setVertexData(getVerticesPointer(),getNumVertices(),usage);
-//            vboNumVerts = getNumVertices();
-//        }else{
-//            vbo.updateVertexData(getVerticesPointer(),getNumVertices());
-//        }
-//    }
     
     if(bUpdateTheVeeeeebs || veebs.getNumVertices() < 1) {
         if( aMesh->hasVertices() ) {
@@ -765,13 +751,14 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
             veebs.drawElements( GL_TRIANGLES, veebs.getNumIndices() );
         } else {
         
-            if(bAllMaterialsEnabled) veebs.bind();
+            if(bAllMaterialsEnabled) {
+                veebs.bind();
+            }
             
             for( int lIndex = 0; lIndex < lSubMeshCount; ++lIndex ) {
                 if( lIndex < aMats.size() ) {
                     aMats[lIndex]->begin();
-
-                    GLsizei lOffset = subMeshes[lIndex].indexOffset * sizeof(unsigned int);
+                    
                     const GLsizei lElementCount = subMeshes[lIndex].totalIndices;
                     
                     if( bAllMaterialsEnabled ) {
@@ -779,8 +766,9 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
         //            cout << "lElementCount = " << lElementCount << " mesh is using indices = " << mesh.hasIndices() << endl;
 
                         #ifdef TARGET_OPENGLES
-                            glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, reinterpret_cast<const GLvoid *>(lOffset));
+                            glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, (void*)(sizeof(ofIndexType) * subMeshes[lIndex].indexOffset));
                         #else
+                            GLsizei lOffset = subMeshes[lIndex].indexOffset * sizeof(unsigned int);
                             glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
                         #endif
                     } else {

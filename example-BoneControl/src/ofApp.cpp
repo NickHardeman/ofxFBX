@@ -4,6 +4,8 @@
 void ofApp::setup() {
     ofDisableArbTex();
     
+    ofSetBackgroundColor( 220 );
+    
     // uncomment this to convert scene to meters //
     //ofxFBXSource::Scene::FbxUnits = FbxSystemUnit::m;
     
@@ -24,6 +26,10 @@ void ofApp::setup() {
     cam.setDistance( 20 );
     cam.setFarClip(100);
     cam.setNearClip( .5f );
+    
+    #ifdef TARGET_OPENGLES
+    cam.disableMouseInput();
+    #endif
     
     fbx.setAnimation(0);
     fbx.setPosition( 0, -7, 0 );
@@ -48,6 +54,7 @@ void ofApp::update() {
     
 //    fbx.update();
     
+    #ifndef TARGET_OPENGLES
     // change colors of the materials //
     for( int i = 0; i < fbx.getNumMeshes(); i++ ) {
 //        cout << i << " - " << fbx.getMeshes()[i]->getName() << " num materials: " << fbx.getMeshes()[i]->getNumMaterials() << endl;
@@ -57,6 +64,8 @@ void ofApp::update() {
             mat->disableTextures();
         }
     }
+    #endif
+    
     
     // moves the bones into place based on the animation //
     fbx.earlyUpdate();
@@ -89,14 +98,14 @@ void ofApp::draw() {
             ofSetColor( 255, 255, 255 );
             fbx.draw();
         }
-        
+
         light.disable();
         ofDisableLighting();
-        
+
         if(bDrawBones) {
             fbx.drawSkeletons( 0.5 );
         }
-        
+
         if( bRenderNormals ) {
             ofSetColor( 255, 0, 255 );
             fbx.drawMeshNormals( 0.5, false );
@@ -161,12 +170,12 @@ void ofApp::touchUp(ofTouchEventArgs & touch) {
 
 //--------------------------------------------------------------
 void ofApp::touchDoubleTap(ofTouchEventArgs & touch) {
-    if(scene.getNumAnimations() > 1) {
-        int newAnimIndex = fbxMan.getCurrentAnimationIndex()+1;
-        if(newAnimIndex > scene.getNumAnimations()-1 ) {
-            newAnimIndex = 0;
-        }
-        fbxMan.setAnimation( newAnimIndex );
+    if( bRenderMeshes ) {
+        bRenderMeshes = false;
+        bDrawBones = true;
+    } else {
+        bRenderMeshes = true;
+        bDrawBones = false;
     }
 }
 
