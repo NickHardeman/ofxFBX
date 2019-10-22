@@ -26,14 +26,6 @@ Features include:
 * Scene caching for faster loading of the same scene multiple times
 * Conversion to different units
 
-### Windows Visual Studio 2017 Notes
-To compile in Debug mode, unzip the lib in `ofxFBX/libs/fbxsdk_2016.1/lib/vs/x64/Debug`
-
-### iOS Notes
-The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will need to tell the compiler to treat them as Objective-C++. Click on ofApp.cpp and then select Objective-C++ from the drop down menu. Do the same for main.cpp. (see below image.)
-
-![ObjectiveC++](ReadMeImages/ObjCFileType.png)
-
 If you have a fbx with a single animation that needs to be broken up into separate animations, you can try the following:
 `mScene.load( "Alligator.FBX", tsettings );`
 
@@ -43,6 +35,17 @@ If you have a fbx with a single animation that needs to be broken up into separa
 
 `mScene.addAnimation("Swim", 61, 80 );`
 
+
+### Windows Visual Studio 2017 Notes
+To compile in Debug mode, unzip the lib in `ofxFBX/libs/fbxsdk_2016.1/lib/vs/x64/Debug`
+
+### iOS Notes
+The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will need to tell the compiler to treat them as Objective-C++. Click on ofApp.cpp and then select Objective-C++ from the drop down menu. Do the same for main.cpp. (see below image.)
+
+![ObjectiveC++](ReadMeImages/ObjCFileType.png)
+
+### Linux
+Linux support may be possible. The libs can be downloaded from https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-5. According to the sdk docs: Any Linux implementation that provides GCC version 4.0.2 and above. Any help implementing Linux support would be greatly appreciated.
 
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
