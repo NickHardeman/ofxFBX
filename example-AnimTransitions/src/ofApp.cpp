@@ -165,7 +165,7 @@ void ofApp::touchUp(ofTouchEventArgs & touch) {
 
 //--------------------------------------------------------------
 void ofApp::touchDoubleTap(ofTouchEventArgs & touch) {
-    if(scene.getNumAnimations() > 1) {
+    if(fbx.getNumAnimations() > 1) {
         int newAnimIndex = fbx.getCurrentAnimationIndex()+1;
         if(newAnimIndex > fbx.getNumAnimations()-1 ) {
             newAnimIndex = 0;
