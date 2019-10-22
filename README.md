@@ -30,9 +30,9 @@ Features include:
 To compile in Debug mode, unzip the lib in `ofxFBX/libs/fbxsdk_2016.1/lib/vs/x64/Debug`
 
 ### iOS Notes
-The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will also need to add libiconv.tbd in the Build Phase settings. (see below image.)
+The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will need to tell the compiler to treat them as Objective-C++. Click on ofApp.cpp and then select Objective-C++ from the drop down menu. Do the same for main.cpp. (see below image.)
 
-![libiconv](ReadMeImages/libiconv.png)
+![ObjectiveC++](ReadMeImages/ObjCFileType.png)
 
 If you have a fbx with a single animation that needs to be broken up into separate animations, you can try the following:
 `mScene.load( "Alligator.FBX", tsettings );`
