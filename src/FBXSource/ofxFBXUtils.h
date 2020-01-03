@@ -12,6 +12,8 @@
 #include "ofMain.h"
 #include <fbxsdk.h>
 #include "GetPosition.h"
+#include "glm/mat4x4.hpp"
+#include "glm/gtx/euler_angles.hpp"
 
 namespace ofxFBXSource {
 
@@ -43,13 +45,13 @@ inline void fbxToGlmComponents( FbxAMatrix& ainput, glm::vec3& apos, glm::quat& 
     
     FbxVector4 euler;// = ainput.GetQ().DecomposeSphericalXYZ();//ainput.GetR();
     euler = ainput.GetR();
-    float ix = -1.f;//ofGetKeyPressed('1') ? 1.f : -1.f;
-    float iy = -1.f;//ofGetKeyPressed('2') ? 1.f : -1.f;
-    float iz = -1.f;//ofGetKeyPressed('3') ? 1.f : -1.f;
-    trot = toQuat(glm::eulerAngleXYZ(glm::radians(euler[0]) * ix,
-                                     glm::radians(euler[1]) * iy,
-                                     glm::radians(euler[2]) * iz));
-    
+    float ix = -1.f * glm::radians(euler[0]);//ofGetKeyPressed('1') ? 1.f : -1.f;
+    float iy = -1.f * glm::radians(euler[1]);//ofGetKeyPressed('2') ? 1.f : -1.f;
+    float iz = -1.f * glm::radians(euler[2]);//ofGetKeyPressed('3') ? 1.f : -1.f;
+//    trot = toQuat(glm::eulerAngleXYZ(glm::radians(euler[0]) * ix,
+//                                     glm::radians(euler[1]) * iy,
+//                                     glm::radians(euler[2]) * iz));
+    trot = glm::toQuat(glm::eulerAngleXYZ( ix, iy, iz ));
     
     ascale = tscale;
     apos = ( tpos );
