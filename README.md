@@ -8,7 +8,7 @@
 
 Updated to maintain the hierarchy of the fbx file. Added getter / search functions. 
 Not compatible with older versions of the addon.
-Currently supporting OSX, iOS and Windows Visual Studio. Tested with OF >= v0.10. Please check older releases for compatibility with older versions of OF.
+Currently supporting OSX, iOS, Windows Visual Studio and Linux. Tested with OF >= v0.10. Please check older releases for compatibility with older versions of OF. Linux support thanks to @themancalledjakob
 
 Features include:
 * Multiple Animations with individual control
