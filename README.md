@@ -45,7 +45,22 @@ The example projects include a ofApp.cpp and main.cpp. The project generator wil
 ![ObjectiveC++](ReadMeImages/ObjCFileType.png)
 
 ### Linux
-Linux support may be possible. The libs can be downloaded from https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2019-5. According to the sdk docs: Any Linux implementation that provides GCC version 4.0.2 and above. Any help implementing Linux support would be greatly appreciated.
+To compile in Debug mode:
+```
+mkdir fbx20195_fbxsdk_linux
+cd fbx20195_fbxsdk_linux
+wget https://www.autodesk.com/content/dam/autodesk/www/adn/fbx/20195/fbx20195_fbxsdk_linux.tar.gz
+tar xvfz fbx20195_fbxsdk_linux.tar.gz
+mkdir installed
+chmod +x fbx20195_fbxsdk_linux
+./fbx20195_fbxsdk_linux ./installed
+cp ./installed/lib/gcc/x86/debug/libfbxsdk.a ${OF_ROOT}/addons/ofxFbx/libs/fbxsdk_2019.5/lib/linux/libfbxsdk.a
+cp ./installed/lib/gcc/x64/debug/libfbxsdk.a ${OF_ROOT}/addons/ofxFbx/libs/fbxsdk_2019.5/lib/linux64/libfbxsdk.a
+
+# to switch back to release:
+cp ./installed/lib/gcc/x86/release/libfbxsdk.a ${OF_ROOT}/addons/ofxFbx/libs/fbxsdk_2019.5/lib/linux/libfbxsdk.a
+cp ./installed/lib/gcc/x64/release/libfbxsdk.a ${OF_ROOT}/addons/ofxFbx/libs/fbxsdk_2019.5/lib/linux64/libfbxsdk.a
+```
 
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
