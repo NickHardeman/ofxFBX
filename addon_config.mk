@@ -73,5 +73,4 @@ linux:
 	ADDON_INCLUDES_EXCLUDE = libs/libfbxsdk_2019.5/include/libxml2/%
 
 linux64:
-	ADDON_LDFLAGS = -lxml2
-	ADDON_INCLUDES_EXCLUDE = libs/libfbxsdk_2019.5/include/libxml2/%
+	# libxml2 in libs
