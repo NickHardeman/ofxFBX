@@ -38,6 +38,7 @@ public:
     void setMaterialsEnabled(bool ab);
     
     vector< shared_ptr<ofxFBXSource::MeshTexture> > getTextures();
+    vector< shared_ptr<ofxFBXSource::MeshTexture> > getEnabledTextures();
     bool hasTexture();
     
     void setMeshDirty( bool ab ) { bMeshDirty=ab; }
@@ -63,7 +64,7 @@ private:
     bool bHasTexture = false;
     
     signed long mLastFbxTimeMillis = -99999;// = (unsigned int)fbxFrameTime.GetMilliSeconds();
-    bool bMeshDirty = false;
+    bool bMeshDirty = true;
     int mLastAnimIndex = 0;
     bool bDrawMeshKeyframe = false;
     bool bBlendMeshFrames = false;

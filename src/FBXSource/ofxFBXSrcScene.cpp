@@ -88,7 +88,8 @@ bool Scene::load( string path, Scene::Settings aSettings ) {
     
 	lResult = LoadScene(lSdkManager, lScene, ofToDataPath(path).c_str());
     
-	if(!lResult || !lScene ) {
+//	if(!lResult || !lScene ) {
+    if( !lScene ) {
         ofLogError("ofxFBXSource::Scene") << "An error occurred while loading the scene... :(";
         return false;
 	}
@@ -139,7 +140,7 @@ bool Scene::load( string path, Scene::Settings aSettings ) {
 //    fbxFrameTime.Set( lScene->GetGlobalSettings().GetFrameRate() );
 //    fbxFrameTime.SetTime(0, 0, 0, 1, 0, FbxTime::eFrames24 );
 //    fbxFrameTime.SetSecondDouble( 1.f / 24.f );
-    ofLogVerbose() << "ofxFBXSource::Scene :: time mode: " << lScene->GetGlobalSettings().GetTimeMode() << endl;
+    ofLogNotice() << "ofxFBXSource::Scene :: time mode: " << lScene->GetGlobalSettings().GetTimeMode() << " FbxTime::eFrames30: " << FbxTime::eFrames30 << " frame time: " << fbxFrameTime.GetTimeString() << " frame float: " << fbxFrameTime.GetSecondDouble() << " (1/30): " << (1.f/30.f) << " frame millis: " << fbxFrameTime.GetMilliSeconds() << endl;
     
     // Get the list of all the animation stack.
     if( areAnimationsEnabled() ) {
@@ -192,6 +193,10 @@ bool Scene::load( string path, Scene::Settings aSettings ) {
             getFBXScene()->SetCurrentAnimationStack( currentAnimationStack );
             
             populateKeyFrames( lScene->GetRootNode(), i );
+        }
+        
+        for( auto& node : mSrcNodes ) {
+            node->postKeyframesSetup();
         }
     }
     
@@ -309,6 +314,15 @@ void Scene::cacheTexturesInScene( FbxScene* pScene ) {
                 const FbxString lResolvedFileName = FbxPathUtils::Bind(lAbsFolderName, lTextureFileName);
                 filepath = (string)lResolvedFileName;
                 bFoundTexture = isValidTexturePath( filepath );
+            }
+            
+            if( _settings.overrideFbmFolderPath != "" ) {
+                string tfolder = ofFilePath::addTrailingSlash(_settings.overrideFbmFolderPath);
+                if( ofDirectory::doesDirectoryExist( ofFilePath::removeTrailingSlash(tfolder)) ) {
+                    cout << "ofxFBXSrcScene :: going to try and load texture from folder: " << tfolder << " filename: " << FbxPathUtils::GetFileName(lFileName) << endl;
+                    filepath = tfolder+(string)FbxPathUtils::GetFileName(lFileName);
+                    bFoundTexture = isValidTexturePath( filepath );
+                }
             }
             
             if(!bFoundTexture) {
@@ -543,6 +557,8 @@ ofxFBXAnimation& Scene::addAnimation( string aname, int aFrameBegin, int aFrameE
     lScene->FillAnimStackNameArray(mAnimStackNameArray);
     //animations.resize( mAnimStackNameArray.GetCount() );
     
+    ofLogVerbose() << "ofxFBX :: Adding an animation: " << aname << " start frame: " << aFrameBegin << " end frame: " << aFrameEnd << endl;
+    
     if( mAnimStackNameArray.GetCount() < 1 ) {
         ofLogError("ofxFBXSource::Scene :: addAnimation : no animations in file found" );
         return dummyAnimation;
@@ -555,33 +571,15 @@ ofxFBXAnimation& Scene::addAnimation( string aname, int aFrameBegin, int aFrameE
     FbxAnimStack* lCurrentAnimationStack    = lScene->FindMember<FbxAnimStack>(mAnimStackNameArray[aAnimStackIndex]->Buffer());
     FbxTakeInfo* lCurrentTakeInfo           = lScene->GetTakeInfo(*(mAnimStackNameArray[aAnimStackIndex]));
     
-    FbxTime startTime, endTime;
+    auto timeMode = fbxFrameTime.GetGlobalTimeMode();
     
-    if (lCurrentTakeInfo) {
-        startTime   = lCurrentTakeInfo->mLocalTimeSpan.GetStart();
-        endTime     = lCurrentTakeInfo->mLocalTimeSpan.GetStop();
-    } else {
-        // Take the time line value
-        FbxTimeSpan lTimeLineTimeSpan;
-        lScene->GetGlobalSettings().GetTimelineDefaultTimeSpan(lTimeLineTimeSpan);
-        startTime   = lTimeLineTimeSpan.GetStart();
-        endTime     = lTimeLineTimeSpan.GetStop();
-    }
+    FbxTime startFrameTime;
+    FbxTime endFrameTime;// = startTime + fbxFrameTime * (signed long long)(aFrameEnd);
     
-    int totalFrames = ceil( (endTime.GetMilliSeconds() - startTime.GetMilliSeconds()) / fbxFrameTime.GetMilliSeconds() );
     
-//    int ttime = ofMap(aPct, 0.f, 1.f, startTimeMillis, stopTimeMillis, true );
-//    fbxCurrentTime.SetMilliSeconds(ttime);
-    
-    FbxTime startFrameTime = startTime + fbxFrameTime * aFrameBegin;
-    FbxTime endFrameTime = startTime + fbxFrameTime * aFrameEnd;
-    
-    startFrameTime.SetMilliSeconds( (int)ofMap((float)aFrameBegin / (float)totalFrames, 0.f, 1.f, startTime.GetMilliSeconds(), endTime.GetMilliSeconds(), true ));
-    endFrameTime.SetMilliSeconds( (int)ofMap((float)aFrameEnd / (float)totalFrames, 0.f, 1.f, startTime.GetMilliSeconds(), endTime.GetMilliSeconds(), true ));
-    
-    if( startFrameTime > endTime ) startFrameTime = endTime;
-    if( endFrameTime > endTime ) endFrameTime = endTime;
-//    fbxCurrentTime  = fbxStartTime + fbxFrameTime * tframe;
+//    cout << "ofxFBXSrceScene :: startFrameTime: " << startFrameTime.GetMilliSeconds() << " frame: " << startFrameTime.GetFrameCount() << " aFrameBegin: " << aFrameBegin << endl;
+    startFrameTime.SetFrame(aFrameBegin, timeMode);
+    endFrameTime.SetFrame(aFrameEnd, timeMode);
     
     ofxFBXAnimation animation;
     animation.setup( startFrameTime, endFrameTime, fbxFrameTime );
@@ -591,7 +589,7 @@ ofxFBXAnimation& Scene::addAnimation( string aname, int aFrameBegin, int aFrameE
     animation.index     = animations.size();
     animation.name      = aname;//FbxString(*mAnimStackNameArray[i]);
     animations.push_back( animation );
-    ofLogVerbose("ofxFBXSource::Scene") << " Adding animation :: name: " << animation.name << " starttime: " << startFrameTime.GetTimeString() << " end time: " << endFrameTime.GetTimeString() << " num frames: " << animation.getTotalNumFrames() << endl;
+    ofLogNotice("ofxFBXSource::Scene") << " Adding animation :: name: " << animation.name << " starttime: " << startFrameTime.GetTimeString() << " end time: " << endFrameTime.GetTimeString() << " num frames: " << animation.getTotalNumFrames() << endl;
     
     if( areAnimationsEnabled() && _settings.useKeyFrames ) {
         FbxAnimStack* currentAnimationStack = getFBXScene()->FindMember<FbxAnimStack>( (&animation.fbxname)->Buffer() );
@@ -601,6 +599,10 @@ ofxFBXAnimation& Scene::addAnimation( string aname, int aFrameBegin, int aFrameE
         } else {
             // this is a problem. The anim stack should be found in the scene!
             ofLogWarning("ofxFBXSource::Scene :: addAnimation : the anim stack was not found in the scene!");
+        }
+        
+        for( auto& node : mSrcNodes ) {
+            node->postKeyframesSetup();
         }
     }
     
@@ -748,8 +750,14 @@ void Scene::_constructSkeletons( FbxNode* aNode ) {
 //        cout << "ofxFBXSrcScene :: _constructSkeletons : we have a bone " << (cbone ? "Good" : "Bad" ) << endl;
         
         if( cbone ) {
+//            cout << "ofxFBXSrcScene :: _constructSkeletons bone: " << cbone->getName() << endl;
             skeletonPtr->root = cbone;//static_cast<ofxFBXSource::Bone *>( skeletonNode->GetUserDataPtr() );
             skeletonPtr->setup( skeletonNode );
+            //if( bonePtr && bonePtr->mFbxNode ) {
+                // IsRoot
+                //bool bparent = bonePtr->mFbxNode->GetParent() ? "yes" : "no";
+//                cout << "ofxFBXSrcScene :: _constructSkeletons bone source: " << bonePtr->mFbxNode->GetName() << " has parent: " << bparent << endl;
+            //}
         
             constructSkeletonsRecursive( skeletonPtr.get(), skeletonNode, 0 );
         }
@@ -760,6 +768,7 @@ void Scene::_constructSkeletons( FbxNode* aNode ) {
 void Scene::_getSkeletonBases( FbxNode* aNode, list<FbxNode*>& aSkeletonBases ) {
     ofxFBXSource::Node::NodeType ftype = getOFXNodeType( aNode );
     if( ftype == ofxFBXSource::Node::OFX_FBX_SKELETON ) {
+        ofLogVerbose("Scene :: getSkeletonBases : " ) << aNode->GetName();
         aSkeletonBases.push_back( aNode );
     }
     
@@ -788,12 +797,20 @@ shared_ptr<ofxFBXSource::Mesh> Scene::_getMeshForNode( FbxNode* aNode ) {
 //        cout << "ofxFBXScene :: _getMeshForNode : name = " << ofxFBXNode::getFbxTypeStringFromNode( aNode ) << endl;
 //        cout << "ofxFBXScene :: GetShapeCount " << aNode->GetSubdiv() << " patch: " << aNode->GetPatch() << endl;
         
-        FbxAMatrix lGlobalPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
+//        FbxAMatrix lGlobalPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
+//        if( !aNode->GetParent() ) {
+//            tmesh->setLocalTransformMatrix(lGlobalPosition);
+//        } else {
+//            FbxAMatrix lLocalPosition = GetLocalPositionForNode(aNode, FBXSDK_TIME_INFINITE, NULL );
+//            tmesh->setLocalTransformMatrix(lLocalPosition);
+//        }
+        FbxAMatrix lPosition;// = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
         if( !aNode->GetParent() ) {
-            tmesh->setLocalTransformMatrix(lGlobalPosition);
+            lPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
+            tmesh->setLocalTransformMatrix(lPosition);
         } else {
-            FbxAMatrix lLocalPosition = GetLocalPositionForNode(aNode, FBXSDK_TIME_INFINITE, NULL );
-            tmesh->setLocalTransformMatrix(lLocalPosition);
+            lPosition = GetLocalPositionForNode(aNode, FBXSDK_TIME_INFINITE, NULL );
+            tmesh->setLocalTransformMatrix(lPosition);
         }
         tmesh->cacheStartTransforms();
         
@@ -802,20 +819,23 @@ shared_ptr<ofxFBXSource::Mesh> Scene::_getMeshForNode( FbxNode* aNode ) {
         
         if( lSkinCount > 0 && _settings.importBones ) {
             
+            lPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
             for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex) {
                 FbxSkin * lSkinDeformer = (FbxSkin *)aNode->GetMesh()->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
                 
                 int lClusterCount = lSkinDeformer->GetClusterCount();
                 for ( int lClusterIndex=0; lClusterIndex<lClusterCount; ++lClusterIndex) {
                     FbxCluster* lCluster = lSkinDeformer->GetCluster(lClusterIndex);
-                    if (!lCluster->GetLink())
+                    // get link is the bone it is attached to usually
+                    if (!lCluster->GetLink()) {
                         continue;
+                    }
                     
-                    if ( !lCluster->GetUserDataPtr() ) {
+                    if( !lCluster->GetUserDataPtr() ) {
                         auto fcluster = make_shared<ofxFBXSource::Cluster>();
                         clusters.push_back( fcluster );
 //                        mSrcNodes.push_back(fcluster);
-                        fcluster->setup( lGlobalPosition, aNode->GetMesh(), lCluster );
+                        fcluster->setup( lPosition, aNode->GetMesh(), lCluster );
                         lCluster->SetUserDataPtr( fcluster.get() );
                     }
                 }
@@ -845,8 +865,8 @@ shared_ptr<ofxFBXSource::NurbsCurve> Scene::_getNurbsCurveForNode( FbxNode* aNod
 //        FbxAMatrix lGlobalPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
 //        tc->setLocalTransformMatrix(lGlobalPosition);
         
-        FbxAMatrix lGlobalPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
         if( !aNode->GetParent() ) {
+            FbxAMatrix lGlobalPosition = GetGlobalPosition(aNode, FBXSDK_TIME_INFINITE, NULL );
             tc->setLocalTransformMatrix(lGlobalPosition);
         } else {
             FbxAMatrix lLocalPosition = GetLocalPositionForNode(aNode, FBXSDK_TIME_INFINITE, NULL );
@@ -968,7 +988,7 @@ shared_ptr<ofxFBXSource::Node> Scene::_getOfxNodeFromNodeUserData( FbxNode* aNod
 void Scene::_parentNodesRecursive( FbxNode* aNode ) {
     if( aNode == NULL ) { return; }
     
-//    cout << "_parentNodesRecursive " << mSceneNodes.size() << " name: " << aNode->GetName() << " type: " << getTypeStringFromNode(aNode) << endl;
+//    cout << "_parentNodesRecursive " << mSceneNodes.size() << " name: " << aNode->GetName() << " type: " << Bone::getFbxTypeStringFromNode(aNode) << endl;
 //    if( aNode->GetParent() ) {
 //        cout << "  -- parent name: " << aNode->GetParent()->GetName() << endl;
 //    }
@@ -981,10 +1001,6 @@ void Scene::_parentNodesRecursive( FbxNode* aNode ) {
 //    FbxNodeAttribute* lNodeAttribute = aNode->GetNodeAttribute();
     
     shared_ptr<ofxFBXSource::Node> cnode = _getOfxNodeFromNodeUserData( aNode );
-    
-//    if( cnode ) {
-//
-//    }
     
     if( aNode->GetParent() && aNode->GetParent() != lScene->GetRootNode() ) {
         shared_ptr<ofxFBXSource::Node> pnode = _getOfxNodeFromNodeUserData( aNode->GetParent() );
@@ -1014,6 +1030,7 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
     // populate the position first //
     
     ofxFBXSource::Node* fnode = nullptr;
+    ofxFBXSource::Mesh* meshPtr = nullptr;
     
     ofxFBXSource::Node::NodeType ftype = getOFXNodeType( pNode );
     if( ftype != ofxFBXSource::Node::OFX_FBX_UNKNOWN && pNode->GetUserDataPtr() ) {
@@ -1021,10 +1038,29 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
             ofxFBXSource::Bone* bonePtr = static_cast<ofxFBXSource::Bone *>(pNode->GetUserDataPtr());
             fnode = bonePtr;
         } else if( ftype == ofxFBXSource::Node::OFX_FBX_MESH ) {
-            ofxFBXSource::Mesh* meshPtr = static_cast<ofxFBXSource::Mesh *>(pNode->GetUserDataPtr());
+            meshPtr = static_cast<ofxFBXSource::Mesh *>(pNode->GetUserDataPtr());
             fnode = meshPtr;
+        } else if( ftype == ofxFBXSource::Node::OFX_FBX_NURBS_CURVE ) {
+            ofxFBXSource::NurbsCurve* curvePtr = static_cast<ofxFBXSource::NurbsCurve *>(pNode->GetUserDataPtr());
+            fnode = curvePtr;
+        } else if( ftype == ofxFBXSource::Node::OFX_FBX_NULL ) {
+            ofxFBXSource::Node* fbxNullPtr = static_cast<ofxFBXSource::Node *>(pNode->GetUserDataPtr());
+            fnode = fbxNullPtr;
         }
     }
+    
+//    bool bPrintInfo = false;
+//    if( pNode ) {
+//        string pname = pNode->GetName();// == "sc_L_hip01"
+//        if( pname == "sc_L_hip01" ) {
+//            bPrintInfo = true;
+//            string bHasUserPtr = "No User Ptr";
+//            if( pNode->GetUserDataPtr() ) {
+//                bHasUserPtr = "Has User Ptr";
+//            }
+//            cout << aAnimIndex << " - " << pname << " - ftype: " << ftype << " " << Node::getNodeTypeAsString(ftype) << " " << bHasUserPtr << " " << endl;
+//        }
+//    }
     
     if( !fnode ) {
         ofLogVerbose("Scene::populateKeyFrames : could not parse keyframes for node: ") << pNode->GetName();
@@ -1052,9 +1088,11 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
         bool bGrabGlobalTransform = false;
         FbxNodeAttribute* lNodeAttribute = pNode->GetNodeAttribute();
         if ( lNodeAttribute && lNodeAttribute->GetAttributeType() == FbxNodeAttribute::eSkeleton ) {
+//            if(pNode->GetSkeleton() && pNode->GetSkeleton()->IsSkeletonRoot() && !pNode->GetParent() ) {
             if(pNode->GetSkeleton() && pNode->GetSkeleton()->IsSkeletonRoot() ) {
                 bGrabGlobalTransform = true;
-//                cout << "ofxFBXSrcScene :: skeleton global transform : " << pNode->GetName() << endl;
+                cout << "**********************************************" << endl;
+                cout << "ofxFBXSrcScene :: skeleton global transform : " << pNode->GetName() << endl;
             }
         }
         if( ftype != ofxFBXSource::Node::OFX_FBX_SKELETON && ftype != ofxFBXSource::Node::OFX_FBX_BONE ) {
@@ -1066,7 +1104,12 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
         // figure out the parsing //
         ofxFBXAnimation& tanim = animations[ aAnimIndex ];
         ofxFBXSource::AnimKeyCollection& kcollection = fnode->getKeyCollection( aAnimIndex );
+        kcollection.clear();
         
+        if( meshPtr != nullptr ) {
+            auto& globalKeys = meshPtr->getGlobalKeyCollection( aAnimIndex );
+            globalKeys.clear();
+        }
         
         FbxAnimCurve* lPosCurveX = pNode->LclTranslation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_X);
         FbxAnimCurve* lPosCurveY = pNode->LclTranslation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_Y);
@@ -1093,6 +1136,7 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
         int numPosKeys = 0;
         int numScaleKeys = 0;
         int numRotKeys = 0;
+        
         
         for( int i = 0; i < tanim.getTotalNumFrames(); i++ ) {
             tanim.setFrame(i);
@@ -1139,9 +1183,18 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
             if( !bHasRotKey && requiresKeyForTime(rotZKeys, cmillis, nmillis )) bHasRotKey=true;
             
 //            cout << pNode->GetName() << " : " << i << " - " << bHasScaleKey << endl;
+            
+            
+            glm::vec3 tpos, tscale;
+            glm::quat tquat;
+            
+            // for meshes, we need to global transforms from fbx to properly apply to bone matrices //
+            if( meshPtr != nullptr ) {
+                FbxAMatrix lGlobalPosition = GetGlobalPosition( pNode, tanim.fbxCurrentTime );
+                meshPtr->addGlobalKeyToCollection( aAnimIndex, tanim.fbxCurrentTime.GetMilliSeconds(), lGlobalPosition );
+            }
 
-			glm::vec3 tpos, tscale;
-			glm::quat tquat;
+			
 			//fbxToGlmComponents(FbxAMatrix& ainput, glm::vec3& apos, glm::quat& aquat, glm::vec3& ascale)
 
 //            if( pNode->GetParent() ) {
@@ -1205,7 +1258,7 @@ void Scene::populateKeyFrames( FbxNode* pNode, int aAnimIndex ) {
             
         }
         
-        ofLogVerbose("ofxFBXScene :: ") << fnode->getName() << " num pos keys: " << numPosKeys << " scale: " << numScaleKeys << " rot: " << numRotKeys << " total: " << tanim.getTotalNumFrames();
+        ofLogVerbose("ofxFBXScene :: keyframe break down ") << fnode->getName() << " num pos keys: " << numPosKeys << " scale: " << numScaleKeys << " rot: " << numRotKeys << " total: " << tanim.getTotalNumFrames();
         
         // rotation //
 //        FbxAnimCurve* lRotCurveX = pNode->LclRotation.GetCurve(currentFbxAnimationLayer, FBXSDK_CURVENODE_COMPONENT_X);

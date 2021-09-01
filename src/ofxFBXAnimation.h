@@ -57,7 +57,7 @@ public:
     int index = 0;
     FbxString fbxname;
     
-    unsigned int startTimeMillis=0, stopTimeMillis=1000, frameTimeMillis=1/30*1000;
+    signed long long startTimeMillis=0, stopTimeMillis=1000, frameTimeMillis=1/30*1000;
     
     FbxTime fbxStartTime, fbxStopTime, fbxCurrentTime, fbxFrameTime;
     
@@ -69,7 +69,11 @@ protected:
     float _speed = 1.f;
     float _framerate = 30;
     
-    int lastUpdateTimeMillis = -1;
+    FbxTime mFbxFrameDeltaTime;
+    
+    uint64_t lastUpdateTimeMillis = 0;
+    
+    uint64_t mFrameTimeDelta = 0;
 };
 
 

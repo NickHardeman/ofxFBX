@@ -107,6 +107,9 @@ bool ofxFBX::load( string path, ofxFBXSource::Scene::Settings aSettings ) {
     }
     if( !mSceneInternal ) {
         mSceneInternal = make_shared<ofxFBXSource::Scene>();
+        
+        cout << " trying to load " << path << endl; 
+        
         if( mSceneInternal->load( path, aSettings )) {
             mCachedScenes.push_back( mSceneInternal );
         } else {
@@ -168,6 +171,19 @@ void ofxFBX::setup( ofxFBXSource::Scene* aScene ) {
     
     aScene->populatePoses( poses );
     
+    // lets see if the meshes are controlled via bones //
+    // if there is a skin deformer, clear the parent.
+    // bones will set the positions of the vertices and the bones are parented to the fbx, if it's not cleared,
+    // then the mesh will get transformed by the bones and then again by this parent
+    if( !aScene->getSettings().cacheMeshKeyframes ) {
+        for( auto& mesh : meshes ) {
+    //        cout << "ofxFBXSrcScene :: mesh: " << mesh->getName() << " has deformer: " << mesh->getSourceMesh()->hasClusterDeformation() << endl;
+            if( mesh->getSourceMesh() && mesh->getSourceMesh()->hasClusterDeformation() ) {
+                mesh->clearParent();
+            }
+        }
+    }
+    
     // check the fbx scene if the mesh keyframes have been cached //
     if( aScene->getSettings().cacheMeshKeyframes ) {
         cacheMeshKeyframes( aScene->getSettings().blendCachedMeshKeyframes );
@@ -176,6 +192,22 @@ void ofxFBX::setup( ofxFBXSource::Scene* aScene ) {
     if( hasAnimations() ) {
         // set to the first animation
         setAnimation(0);
+    }
+    
+    auto& fs = aScene->getSettings();
+    for( auto& mesh : meshes ) {
+        for( auto& mat : mesh->getMaterials() ) {
+            if( !fs.importMaterials ) {
+                mat->disable();
+            } else {
+                if( !fs.enableMaterials ) {
+                    mat->disableMaterials();
+                }
+                if( !fs.importTextures ) {
+                    mat->disableTextures();
+                }
+            }
+        }
     }
     
 }
@@ -218,6 +250,7 @@ void ofxFBX::_parseSceneNodesRecursive( shared_ptr<ofxFBXSource::Node> anode, sh
             newNode->setParent( *aParentNode );
             newNode->setParentNode( aParentNode );
         } else {
+            
             newNode->setParent( *this );
             mRootNodes.push_back( newNode );
         }
@@ -325,14 +358,30 @@ void ofxFBX::lateUpdate() {
         if( bFirstRun ) {
             FbxTime ttime(FBXSDK_TIME_INFINITE);
             for( auto& node : mAllNodes ) {
-                node->lateUpdate(ttime, currentFbxAnimationLayer, NULL);
+                if( node->getType() == ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() ==  ofxFBXSource::Node::OFX_FBX_BONE) {
+                    node->lateUpdate(ttime, currentFbxAnimationLayer, NULL);
+                }
+            }
+            for( auto& node : mAllNodes ) {
+                if( node->getType() != ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() !=  ofxFBXSource::Node::OFX_FBX_BONE) {
+                    node->lateUpdate(ttime, currentFbxAnimationLayer, NULL);
+                }
             }
         }
     }
     
     if(animations.size() > 0 && areAnimationsEnabled() ) {
+        // update skeletons first //
         for( auto& node : mAllNodes ) {
-            node->lateUpdate(animations[animationIndex].fbxCurrentTime, currentFbxAnimationLayer, NULL);
+            if( node->getType() == ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() ==  ofxFBXSource::Node::OFX_FBX_BONE) {
+                node->lateUpdate(animations[animationIndex].fbxCurrentTime, currentFbxAnimationLayer, NULL);
+            }
+        }
+        
+        for( auto& node : mAllNodes ) {
+            if( node->getType() != ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() !=  ofxFBXSource::Node::OFX_FBX_BONE) {
+                node->lateUpdate(animations[animationIndex].fbxCurrentTime, currentFbxAnimationLayer, NULL);
+            }
         }
     }
     
@@ -454,6 +503,15 @@ int ofxFBX::getNumMeshes() {
 }
 
 //--------------------------------------------------------------
+unsigned int ofxFBX::getNumVertices() {
+    unsigned int tverts = 0;
+    for( int i = 0; i < meshes.size(); i++ ) {
+        tverts += meshes[i]->getMesh().getNumVertices();
+    }
+    return tverts;
+}
+
+//--------------------------------------------------------------
 string ofxFBX::getMeshName( int aMeshIndex ) {
     return meshes[aMeshIndex]->getName();//fbxScene->getMeshes()[aMeshIndex]->getName();
 }
@@ -537,8 +595,17 @@ void ofxFBX::cacheMeshKeyframes( bool aBlendMeshKeys ) {
                     node->update();
                 }
                 
+                // first update all of the skeletons //
                 for( auto& node : mAllNodes ) {
-                    node->lateUpdate( tanim.fbxCurrentTime, currentFbxAnimationLayer, NULL );
+                    if( node->getType() == ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() ==  ofxFBXSource::Node::OFX_FBX_BONE) {
+                        node->lateUpdate( tanim.fbxCurrentTime, currentFbxAnimationLayer, NULL );
+                    }
+                }
+                
+                for( auto& node : mAllNodes ) {
+                    if( node->getType() != ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() !=  ofxFBXSource::Node::OFX_FBX_BONE) {
+                        node->lateUpdate( tanim.fbxCurrentTime, currentFbxAnimationLayer, NULL );
+                    }
                     // now we need to cache the meshes in the meshes //
                     if( node->getType() == ofxFBXSource::Node::OFX_FBX_MESH && node->getofxFbxSrcNode() ) {
                         // now lets cache the mesh //
@@ -908,6 +975,24 @@ bool ofxFBX::isTransitioning() {
 //--------------------------------------------------------------
 float ofxFBX::getTransitionPercent() {
     return mAnimTrans.percent;
+}
+
+//--------------------------------------------------------------
+int ofxFBX::getTransitionToAnimIndex() {
+    if( !isTransitioning() ) {
+        ofLogWarning("ofxFBX :: getTransitionToAnimIndex : not transitioning currently!");
+    }
+    return mAnimTrans.animIndex2;
+}
+
+//--------------------------------------------------------------
+string ofxFBX::getTransitionToAnimName() {
+    return getTransitionToAnim().name;
+}
+
+//--------------------------------------------------------------
+ofxFBXAnimation& ofxFBX::getTransitionToAnim() {
+    return getAnimation(getTransitionToAnimIndex());
 }
 
 #pragma mark Hierarchy

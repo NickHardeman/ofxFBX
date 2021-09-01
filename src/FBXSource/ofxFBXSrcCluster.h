@@ -16,18 +16,17 @@ class Cluster {
 public:
     Cluster(){}
     ~Cluster() {}
-    void setup( FbxAMatrix& pGlobalPosition,
-               FbxMesh* pMesh,
-               FbxCluster* pCluster );
+    void setup( FbxAMatrix& pPosition, FbxMesh* pMesh, FbxCluster* pCluster );
+    
     void update( FbxTime& pTime, FbxPose* pPose );
     
-    FbxAMatrix origTransform;
+//    FbxAMatrix origTransform;
     FbxAMatrix preTrans, postTrans;
     FbxCluster* cluster = NULL;
     FbxMesh* mesh = NULL;
 protected:
-    FbxAMatrix lReferenceGlobalInitPosition;
-    FbxAMatrix lAssociateGlobalInitPosition;
+    FbxAMatrix mReferenceInitPosition, mInvReferenceInitPosition;
+    FbxAMatrix mAssociateInitPosition;
 };
     
 }

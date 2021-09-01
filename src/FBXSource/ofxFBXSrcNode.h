@@ -1,6 +1,6 @@
 //
 //  ofxFBXSrcNode.h
-//  ConnectionsWall-Nick
+
 //
 //  Created by Nick Hardeman on 7/11/19.
 //
@@ -21,10 +21,36 @@ struct AnimKey {
 
 class AnimKeyCollection {
 public:
-    string name;
+    string name = "";
     vector< ofxFBXSource::AnimKey<float> > posKeysX, posKeysY, posKeysZ;
     vector< ofxFBXSource::AnimKey<ofQuaternion> > rotKeys;
     vector< ofxFBXSource::AnimKey<float> > scaleKeysX, scaleKeysY, scaleKeysZ;
+    
+    bool bPositionKeysStatic = false;
+    bool bRotationKeysStatic = false;
+    bool bScaleKeysStatic = false;
+    
+    size_t getNumPosKeys() {
+        return MAX( MAX( posKeysX.size(), posKeysY.size() ), posKeysZ.size() );
+    }
+    
+    size_t getNumRotationKeys() {
+        return rotKeys.size();
+    }
+    
+    size_t getNumScaleKeys() {
+        return MAX( MAX( scaleKeysX.size(), scaleKeysY.size() ), scaleKeysZ.size() );
+    }
+    
+    void clear() {
+        posKeysX.clear();
+        posKeysY.clear();
+        posKeysZ.clear();
+        rotKeys.clear();
+        scaleKeysX.clear();
+        scaleKeysY.clear();
+        scaleKeysZ.clear();
+    }
 };
 
 class Node : public ofNode {
@@ -60,13 +86,20 @@ public:
     
     void cacheStartTransforms();
     
+    // lets determine if we are animated or not
+    // setting the transforms is expensive, so lets try to avoid it if possible
+    virtual void postKeyframesSetup();
+    
     virtual void update( FbxTime& pTime, FbxPose* pPose );
     virtual void update( int aAnimIndex, signed long aMillis );
     virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
     
     glm::vec3 getKeyTranslation( int aAnimIndex, signed long aMillis );
+    glm::vec3 getKeyTranslation( ofxFBXSource::AnimKeyCollection& acollection, signed long aMillis );
     ofQuaternion getKeyRotation( int aAnimIndex, signed long aMillis );
+    ofQuaternion getKeyRotation( ofxFBXSource::AnimKeyCollection& acollection, signed long aMillis );
     glm::vec3 getKeyScale( int aAnimIndex, signed long aMillis );
+    glm::vec3 getKeyScale( ofxFBXSource::AnimKeyCollection& acollection, signed long aMillis );
     
     float getKeyValue( std::vector<ofxFBXSource::AnimKey<float> >& keys, signed long ms );
     ofQuaternion getKeyRotation(vector<ofxFBXSource::AnimKey<ofQuaternion> >& keys, signed long ms);
@@ -93,6 +126,8 @@ protected:
     glm::mat4 origLocalTransform;
     
     glm::vec3 origPos, origScale;
+    
+    int mPrevAnimIndex = -1;
     
     string name = "";
     int mAnimIndex = 0;

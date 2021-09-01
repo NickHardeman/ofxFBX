@@ -26,18 +26,17 @@ FbxAMatrix GetLocalPositionForNode(FbxNode* pNode,
                                    FbxPose* pPose = NULL,
                                    FbxAMatrix* pParentGlobalPosition = NULL);
 
-FbxAMatrix GetPoseMatrix(FbxPose* pPose, 
-                          int pNodeIndex);
-FbxAMatrix GetGeometry(FbxNode* pNode);
+FbxAMatrix GetPoseMatrix(FbxPose* pPose, int pNodeIndex);
+FbxAMatrix GetGeometry(FbxNode* pNode, FbxNode::EPivotSet pPivot=FbxNode::eSourcePivot);
 
 // Scale all the elements of a matrix.
-void MatrixScale(FbxAMatrix& pMatrix, double pValue);
+void MatrixScale(FbxAMatrix& pMatrix, const double& pValue);
 
 // Add a value to all the elements in the diagonal of the matrix.
-void MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue);
+void MatrixAddToDiagonal(FbxAMatrix& pMatrix, const double& pValue);
 
 // Sum two matrices element by element.
-void MatrixAdd(FbxAMatrix& pDstMatrix, FbxAMatrix& pSrcMatrix);
+void MatrixAdd(FbxAMatrix& pDstMatrix, const FbxAMatrix& pSrcMatrix);
 
 }
 

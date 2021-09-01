@@ -43,7 +43,7 @@ void ofxFBXMeshMaterial::begin() {
 //--------------------------------------------------------------
 void ofxFBXMeshMaterial::end() {
     if( !isEnabled() ) return;
-    if( areMaterialsEnabled() ) ofMaterial::end();
+
     if( hasTexture() && areTexturesEnabled() ) {
         if( mUserTex && mUserTex->isAllocated() ) mUserTex->unbind();
         else if( mSrcTexture && mSrcTexture->isAllocated() ) mSrcTexture->unbind();
@@ -51,6 +51,7 @@ void ofxFBXMeshMaterial::end() {
 //        glBindTexture( GL_TEXTURE_2D, 0);
 //        glDisable( GL_TEXTURE_2D );
     }
+    if( areMaterialsEnabled() ) ofMaterial::end();
 }
 
 //--------------------------------------------------------------

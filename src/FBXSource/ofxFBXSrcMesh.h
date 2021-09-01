@@ -1,6 +1,6 @@
 //
 //  ofxFBXSrcMesh.h
-//  ConnectionsWall-Nick
+
 //
 //  Created by Nick Hardeman on 7/11/19.
 //
@@ -31,9 +31,9 @@ public:
     ~SubMesh() {}
     
     ofxFBXSource::MeshMaterial* materialPtr;
-    int triangleCount;
-    int indexOffset;
-    int totalIndices;
+    unsigned int triangleCount;
+    unsigned int indexOffset;
+    unsigned int totalIndices;
 };
     
 class MeshAnimKey {
@@ -98,6 +98,10 @@ public:
     MeshAnimKey& getMeshAnimKey( int aAnimIndex, signed long aMillis );
     MeshAnimKey& getMeshAnimKeyBlended( int aAnimIndex, signed long aMillis );
     
+    // global keys used for bone vertex manipulations //
+    ofxFBXSource::AnimKeyCollection& getGlobalKeyCollection( int aAnimIndex );
+    void addGlobalKeyToCollection( int aAnimIndex, signed long aMillis, FbxAMatrix& aFbxGlobalMatrix );
+    
 private:
     void _configureMeshFromSrcMesh( ofMesh* aSrcMesh, ofMesh* amesh );
     void _updateMeshFromKeyMesh( ofMesh* aSrcMesh, ofMesh* amesh );
@@ -136,6 +140,13 @@ private:
     map<int, MeshAnimKeyCollection> mMeshKeyCollections;
     bool bUsingCachedMeshes = false;
     MeshAnimKey dummyMeshAnimKey, mBlendedAnimKey;
+    
+    // used for calculations in the bones and clusters //
+    FbxAMatrix mGeometryOffset, mFbxGlobalPosition;
+    map<int, ofxFBXSource::AnimKeyCollection> mGlobalKeyCollections;
+    
+    int mLClusterDeformCount = 0;
+    FbxAMatrix* mlClusterDeformations = NULL;
 };
     
 }

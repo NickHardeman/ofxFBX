@@ -1,6 +1,6 @@
 //
 //  Node.cpp
-//  ConnectionsWall-Nick
+
 //
 //  Created by Nick Hardeman on 7/11/19.
 //
@@ -198,6 +198,93 @@ void Node::cacheStartTransforms() {
     origScale           = getScale();
 }
 
+//--------------------------------------------------------------
+void Node::postKeyframesSetup() {
+    
+    for( int i = 0; i < mKeyCollections.size(); i++ ) {
+        
+//        glm::vec3 firstScale = {};
+//        glm::quat firstQuat = {};
+        AnimKeyCollection& tcollection = mKeyCollections[i];
+        {
+            glm::vec3 firstPos = origPos;
+            tcollection.bPositionKeysStatic = true;
+            int numKeys = tcollection.getNumPosKeys();
+            glm::vec3 tpos = {};
+            for( int j = 0; j < numKeys; j++ ) {
+                if( j < tcollection.posKeysX.size() ) {
+                    tpos.x = tcollection.posKeysX[j].value;
+                }
+                if( j < tcollection.posKeysY.size() ) {
+                    tpos.y = tcollection.posKeysY[j].value;
+                }
+                if( j < tcollection.posKeysZ.size() ) {
+                    tpos.z = tcollection.posKeysZ[j].value;
+                }
+                
+                if( j == 0 ) {
+                    firstPos = tpos;
+                } else {
+                    if( firstPos.x != tpos.x || firstPos.y != tpos.y || firstPos.z != tpos.z ) {
+                        tcollection.bPositionKeysStatic = false;
+                        break;
+                    }
+                }
+            }
+            if( i == 0 )setPosition( firstPos );
+        }
+        
+        {
+            tcollection.bRotationKeysStatic = true;
+            ofQuaternion firstRot = origLocalRotation;
+            int numKeys = tcollection.getNumRotationKeys();
+            ofQuaternion trot = {};
+            for( int j = 0; j < numKeys; j++ ) {
+                trot = tcollection.rotKeys[j].value;
+                
+                if( j == 0 ) {
+                    firstRot = trot;
+                } else {
+                    if( firstRot.x() != trot.x() || firstRot.y() != trot.y() || firstRot.z() != trot.z() || firstRot.w() != trot.w() ) {
+                        tcollection.bRotationKeysStatic = false;
+                        break;
+                    }
+                }
+            }
+            
+            if( i == 0 ) setOrientation( firstRot );
+        }
+        
+        {
+            tcollection.bScaleKeysStatic = true;
+            glm::vec3 firstScale = {};
+            int numKeys = tcollection.getNumScaleKeys();
+            glm::vec3 tscale = origScale;
+            for( int j = 0; j < numKeys; j++ ) {
+                if( j < tcollection.scaleKeysX.size() ) {
+                    tscale.x = tcollection.scaleKeysX[j].value;
+                }
+                if( j < tcollection.scaleKeysY.size() ) {
+                    tscale.y = tcollection.scaleKeysY[j].value;
+                }
+                if( j < tcollection.scaleKeysZ.size() ) {
+                    tscale.z = tcollection.scaleKeysZ[j].value;
+                }
+                
+                if( j == 0 ) {
+                    firstScale = tscale;
+                } else {
+                    if( firstScale.x != tscale.x || firstScale.y != tscale.y || firstScale.z != tscale.z ) {
+                        tcollection.bScaleKeysStatic = false;
+                        break;
+                    }
+                }
+            }
+            if( i == 0 ) setScale( tscale );
+        }
+    }
+}
+
 //----------------------------------------
 void Node::update( FbxTime& pTime, FbxPose* pPose ) {
     if( mFbxNode ) {
@@ -217,23 +304,34 @@ void Node::update( int aAnimIndex, signed long aMillis ) {
     if( mKeyCollections.size() == 0 ) return;
     if( aAnimIndex >= mKeyCollections.size() ) return;
     
-    glm::vec3 tpos = getKeyTranslation( aAnimIndex, aMillis );
-    glm::vec3 cpos = getPosition();
-    if( cpos.x != tpos.x || cpos.y != tpos.y || cpos.z != tpos.z ) {
-        setPosition( tpos );
-    }
+    bool bForceUpdate = (mPrevAnimIndex != aAnimIndex);
     
-    glm::vec3 tscale = getKeyScale( aAnimIndex, aMillis );
-    glm::vec3 cscale = getScale();
-    if( cscale.x != tscale.x || cscale.y != tscale.y || cscale.z != tscale.z ) {
-        setScale( tscale );
-    }
+    auto& kcollection = mKeyCollections[aAnimIndex];
+//    if( !kcollection.bPositionKeysStatic || bForceUpdate) {
+        glm::vec3 tpos = getKeyTranslation( aAnimIndex, aMillis );
+        glm::vec3 cpos = getPosition();
+        if( cpos.x != tpos.x || cpos.y != tpos.y || cpos.z != tpos.z ) {
+            setPosition( tpos );
+        }
+//    }
     
-    ofQuaternion tquat = getKeyRotation( aAnimIndex, aMillis );
-    ofQuaternion cquat = getOrientationQuat();
-    if( cquat.x() != tquat.x() || cquat.y() != tquat.y() || cquat.z() != tquat.z() || cquat.w() != tquat.w() ) {
-        setOrientation( tquat );
-    }
+//    if( !kcollection.bScaleKeysStatic || bForceUpdate) {
+        glm::vec3 tscale = getKeyScale( aAnimIndex, aMillis );
+        glm::vec3 cscale = getScale();
+        if( cscale.x != tscale.x || cscale.y != tscale.y || cscale.z != tscale.z ) {
+            setScale( tscale );
+        }
+//    }
+    
+//    if( !kcollection.bRotationKeysStatic || bForceUpdate) {
+        ofQuaternion tquat = getKeyRotation( aAnimIndex, aMillis );
+        ofQuaternion cquat = getOrientationQuat();
+        if( cquat.x() != tquat.x() || cquat.y() != tquat.y() || cquat.z() != tquat.z() || cquat.w() != tquat.w() ) {
+            setOrientation( tquat );
+        }
+//    }
+    
+    mPrevAnimIndex = aAnimIndex;
 }
 
 //----------------------------------------
@@ -281,10 +379,15 @@ glm::vec3 Node::getKeyTranslation( int aAnimIndex, signed long aMillis ) {
     
     AnimKeyCollection& tcollection = mKeyCollections[aAnimIndex];
     mAnimIndex = aAnimIndex;
+    return getKeyTranslation( tcollection, aMillis );
+}
+
+//----------------------------------------
+glm::vec3 Node::getKeyTranslation( ofxFBXSource::AnimKeyCollection& acollection, signed long aMillis ) {
     glm::vec3 tpos = origPos;
-    if(tcollection.posKeysX.size() > 0) tpos.x = getKeyValue( tcollection.posKeysX, aMillis );
-    if(tcollection.posKeysY.size() > 0) tpos.y = getKeyValue( tcollection.posKeysY, aMillis );
-    if(tcollection.posKeysZ.size() > 0) tpos.z = getKeyValue( tcollection.posKeysZ, aMillis );
+    if(acollection.posKeysX.size() > 0) tpos.x = getKeyValue( acollection.posKeysX, aMillis );
+    if(acollection.posKeysY.size() > 0) tpos.y = getKeyValue( acollection.posKeysY, aMillis );
+    if(acollection.posKeysZ.size() > 0) tpos.z = getKeyValue( acollection.posKeysZ, aMillis );
     return tpos;
 }
 
@@ -301,6 +404,11 @@ ofQuaternion Node::getKeyRotation( int aAnimIndex, signed long aMillis ) {
 }
 
 //----------------------------------------
+ofQuaternion Node::getKeyRotation( ofxFBXSource::AnimKeyCollection& acollection, signed long aMillis ) {
+    return getKeyRotation( acollection.rotKeys, aMillis );
+}
+
+//----------------------------------------
 glm::vec3 Node::getKeyScale( int aAnimIndex, signed long aMillis ) {
     if( aAnimIndex < 0 ) return origScale;
     if( mKeyCollections.size() == 0 ) return origScale;
@@ -309,10 +417,15 @@ glm::vec3 Node::getKeyScale( int aAnimIndex, signed long aMillis ) {
     AnimKeyCollection& tcollection = mKeyCollections[aAnimIndex];
     mAnimIndex = aAnimIndex;
     
+    return getKeyScale( tcollection, aMillis );
+}
+
+//----------------------------------------
+glm::vec3 Node::getKeyScale( ofxFBXSource::AnimKeyCollection& acollection, signed long aMillis ) {
     glm::vec3 tscale = origScale;
-    if(tcollection.scaleKeysX.size() > 0) tscale.x = getKeyValue( tcollection.scaleKeysX, aMillis );
-    if(tcollection.scaleKeysY.size() > 0) tscale.y = getKeyValue( tcollection.scaleKeysY, aMillis );
-    if(tcollection.scaleKeysZ.size() > 0) tscale.z = getKeyValue( tcollection.scaleKeysZ, aMillis );
+    if(acollection.scaleKeysX.size() > 0) tscale.x = getKeyValue( acollection.scaleKeysX, aMillis );
+    if(acollection.scaleKeysY.size() > 0) tscale.y = getKeyValue( acollection.scaleKeysY, aMillis );
+    if(acollection.scaleKeysZ.size() > 0) tscale.z = getKeyValue( acollection.scaleKeysZ, aMillis );
     
     return tscale;
 }

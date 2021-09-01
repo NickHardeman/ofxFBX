@@ -58,6 +58,36 @@ string ofxFBXNode::getName() {
 }
 
 //----------------------------------------
+void ofxFBXNode::update() {
+    if(mSrcNode) {
+        setPosition( mSrcNode->getPosition() );
+        setOrientation( mSrcNode->getOrientationQuat() );
+        setScale( mSrcNode->getScale() );
+    }
+}
+
+//----------------------------------------
+void ofxFBXNode::update( FbxTime& pTime, FbxPose* pPose ) {
+    if(mSrcNode) {
+        mSrcNode->update( pTime, pPose );
+    }
+}
+
+//----------------------------------------
+void ofxFBXNode::update( int aAnimIndex, signed long aMillis ) {
+    if(mSrcNode) {
+        mSrcNode->update( aAnimIndex, aMillis );
+    }
+}
+
+//----------------------------------------
+void ofxFBXNode::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
+    if(mSrcNode) {
+        mSrcNode->update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+    }
+}
+
+//----------------------------------------
 string ofxFBXNode::getFbxTypeString() {
     if(mSrcNode) {
         return mSrcNode->getFbxTypeString();

@@ -30,45 +30,13 @@ void Skeleton::setup( FbxNode *pNode ) {
 }
 
 //--------------------------------------------------------------
-//void ofxFBXSkeleton::reconstructNodeParenting() {
-//
-////    cout << "ofxFBXSkeleton :: rootSounce->hasParent() : " << (rootSource->getParent()==NULL) << " | " << ofGetFrameNum() << endl;
-//
-//    ofxFBXBone tbone = *rootSource;
-//    root = tbone;
-//
-//    root.setAsRoot();
-//    root.sourceBone = rootSource;
-//    root.setupFromSourceBones();
-//
-//    // now we need to reassociate the bone parent pointers, so they are not pointing to the source bones //
-//    // we need a way to get all of the bones as pointers, so we can easily make the association //
-//    map< string, ofxFBXBone* > tempBones = root.getAllBones();
-//    map< string, ofxFBXBone* >::iterator it;
-//
-//    // clear the parents to remove the previous listeners //
-//    for( it = tempBones.begin(); it != tempBones.end(); ++it ) {
-//        if( it->second->getParent() != NULL ) {
-//            it->second->clearParent();
-//        }
-//    }
-//
-//    for( it = tempBones.begin(); it != tempBones.end(); ++it ) {
-//        if( it->second->hasSkeletonParent() ) {
-//            if( tempBones.count(it->second->parentBoneName) ) {
-//                it->second->setParent( *tempBones[it->second->parentBoneName] );
-//            }
-//        }
-//    }
-//}
-
-//--------------------------------------------------------------
 void Skeleton::update( FbxTime& pTime, FbxPose* pPose ) {
     root->update( pTime, pPose );
 }
 
 //--------------------------------------------------------------
 void Skeleton::update( int aAnimIndex, signed long aMillis ) {
+//    cout << "Skeleton :: update : " << getName() << " root name: " << root->getName() << " pos: " << getPosition() << " rotation: " << getOrientationQuat() << " | " << ofGetFrameNum() << endl;
     root->update( aAnimIndex, aMillis );
 }
 
@@ -77,10 +45,10 @@ void Skeleton::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex
     root->update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
 }
 
-//--------------------------------------------------------------
-void Skeleton::lateUpdate() {
-    root->lateUpdate();
-}
+////--------------------------------------------------------------
+//void Skeleton::lateUpdate() {
+//    root->lateUpdate();
+//}
 
 //--------------------------------------------------------------
 //void Skeleton::draw( float aLen, bool aBDrawAxes ) {

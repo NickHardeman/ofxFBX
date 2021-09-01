@@ -15,6 +15,10 @@
 //#include "ofxFBXAnimation.h"
 //#include "ofxFBXManager.h"
 
+#ifndef OFXFBX_INCLUDED
+    #define OFXFBX_INCLUDED
+#endif
+
 class ofxFBX : public ofNode {
 public:
     
@@ -63,6 +67,7 @@ public:
     // MESHES ////////////////////////////
     vector< shared_ptr<ofxFBXMesh> >& getMeshes();
     int getNumMeshes();
+    unsigned int getNumVertices();
     string getMeshName( int aMeshIndex );
     void setMaterialsEnabled( bool ab );
     vector< shared_ptr<ofxFBXSource::MeshTexture> > getSourceTextures();
@@ -120,7 +125,9 @@ public:
     bool isTransitioning();
     float getTransitionPercent();
     AnimationTransition& getTransition() { return mAnimTrans; }
-    
+    int getTransitionToAnimIndex();
+    string getTransitionToAnimName();
+    ofxFBXAnimation& getTransitionToAnim();
     
     // getter / hierarchy functions //
     shared_ptr<ofxFBXNode> getNodeForName( string aPath, bool bStrict=false);

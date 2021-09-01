@@ -28,12 +28,12 @@ public:
     
     string getName();
     
-    virtual void update( FbxTime& pTime, FbxPose* pPose ) {}
-    virtual void update( int aAnimIndex, signed long aMillis ) {}
-    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {}
+    virtual void update( FbxTime& pTime, FbxPose* pPose );
+    virtual void update( int aAnimIndex, signed long aMillis );
+    virtual void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct );
     
     
-    virtual void update() {}
+    virtual void update();
     virtual void lateUpdate( FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* pPose  ) {}
     
     shared_ptr<ofxFBXSource::Node> getofxFbxSrcNode() { return mSrcNode; }
@@ -48,6 +48,9 @@ public:
     void addChild( shared_ptr<ofxFBXNode> akiddo );
     int getNumChildren();
     vector< shared_ptr<ofxFBXNode> >& getChildren();
+    
+    void setEnableRender( bool ab ) { bRenderEnabled = ab; }
+    const bool isRenderEnabled() const { return bRenderEnabled; }
     
     virtual string getAsString( int aLevel=0 );
     
@@ -66,7 +69,7 @@ public:
     }
     
     template<typename ofxFBXNodeType>
-    vector< shared_ptr<ofxFBXNodeType> > getKidsForType() {
+    vector< shared_ptr<ofxFBXNodeType> > getKidsForType( string aNameToContain="" ) {
         
         auto stemp = make_shared<ofxFBXNodeType>();
         int sType = stemp->getType();
@@ -74,7 +77,9 @@ public:
         vector< shared_ptr<ofxFBXNodeType> > telements;
         for( int i = 0; i < mKids.size(); i++ ) {
             if( mKids[i]->getType() == sType ) {
-                telements.push_back( dynamic_pointer_cast<ofxFBXNodeType>(mKids[i]) );
+                if( aNameToContain == "" || ofIsStringInString( mKids[i]->getName(), aNameToContain )) {
+                    telements.push_back( dynamic_pointer_cast<ofxFBXNodeType>(mKids[i]) );
+                }
             }
         }
         return telements;
@@ -108,6 +113,8 @@ protected:
     shared_ptr<ofxFBXNode> mParentNode;
     
     shared_ptr<ofxFBXSource::Node> mSrcNode;
+    
+    bool bRenderEnabled = true;
     
 };
 

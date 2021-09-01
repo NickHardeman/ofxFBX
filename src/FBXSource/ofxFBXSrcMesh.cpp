@@ -1,6 +1,6 @@
 //
 //  ofxFBXSrcMesh.cpp
-//  ConnectionsWall-Nick
+
 //
 //  Created by Nick Hardeman on 7/11/19.
 //
@@ -22,6 +22,12 @@ Mesh::~Mesh() {
         delete [] mNormalsArray;
         mNormalsArray = NULL;
     }
+    
+    if( mlClusterDeformations != NULL ) {
+        delete[] mlClusterDeformations;
+        mlClusterDeformations = NULL;
+    }
+    mLClusterDeformCount = 0;
 }
 
 //--------------------------------------------------------------
@@ -42,6 +48,8 @@ void Mesh::setFBXMesh( FbxMesh* lMesh ) {
     }
     
     ofLogVerbose() << "** ofxFBXMesh :: " << getName() << " attempting to parse ******* ";
+    
+    mGeometryOffset = GetGeometry( fbxMesh->GetNode() );//, FbxNode::eDestinationPivot );
     
     vector< string > eMappingModeNames = {"eNone", "eByControlPoint", "eByPolygonVertex", "eByPolygon", "eByEdge", "eAllSame"};
     vector<string> eRefModes = {"eDirect", "eIndex", "eIndexToDirect" };
@@ -316,33 +324,66 @@ void Mesh::configureMesh( ofMesh& aMesh ) {
 //--------------------------------------------------------------
 void Mesh::update( FbxTime& pTime, FbxPose* pPose ) {
     
-//    cout << "ofxFBXSource :: Mesh : update : " << getName() << " has parent: " << ( mFbxNode->GetParent() ? "yes":"no") << endl;
-    if( fbxMesh->GetNode() && mFbxNode ) {
-        if( !mFbxNode->GetParent() ) {
-            FbxAMatrix lGlobalPosition = GetGlobalPosition(fbxMesh->GetNode(), pTime, NULL );
-            setLocalTransformMatrix(lGlobalPosition);
-        } else {
-            FbxAMatrix lLocalPosition = GetLocalPositionForNode(fbxMesh->GetNode(), pTime, NULL );
-            setLocalTransformMatrix(lLocalPosition);
-        }
-    }
+//    cout << "ofxFBXSource :: Mesh : update : " << getName() << " fbxMesh->GetNode() = mFbxNode: " << ( fbxMesh->GetNode() == mFbxNode ? "yes":"no") << endl;
     
-//    FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, NULL );
-//    //    FbxAMatrix lGlobalPosition = GetLocalPosition( fbxMesh->GetNode(), pTime, NULL );
-//    setLocalTransformMatrix(lGlobalPosition);
-//    //    setTransformMatrix(lGlobalPosition);
-//    //    glm::mat4 ofgpos = fbxToOf(lGlobalPosition);
-//    //    setTransformMatrix( ofgpos );
+//    cout << "ofxFBXSource :: Mesh : update : " << getName() << " has parent: " << ( mFbxNode->GetParent() ? "yes":"no") << endl;
+//    if( fbxMesh->GetNode() && mFbxNode ) {
+//        if( !mFbxNode->GetParent() ) {
+//            FbxAMatrix lGlobalPosition = GetGlobalPosition(fbxMesh->GetNode(), pTime, NULL );
+//            setLocalTransformMatrix(lGlobalPosition);
+//        } else {
+//            FbxAMatrix lLocalPosition = GetLocalPositionForNode(fbxMesh->GetNode(), pTime, NULL );
+//            setLocalTransformMatrix(lLocalPosition);
+//        }
+//
+//      }
+    
+    ofxFBXSource::Node::update( pTime, pPose );
+    mFbxGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, pPose );
 }
 
-//--------------------------------------------------------------
+// --------------------------------------------------------------
 void Mesh::update( int aAnimIndex, signed long aMillis ) {
+//    cout << "ofxFBXSource :: Mesh : update : " << getName() << " fbxMesh->GetNode() = mFbxNode: " << ( fbxMesh->GetNode() == mFbxNode ? "yes":"no") << endl;
     ofxFBXSource::Node::update( aAnimIndex, aMillis );
+    
+    // now we need to figure out the global position for bone purposes //
+    auto& kcollection = getGlobalKeyCollection(aAnimIndex);//mGlobalKeyCollections[aAnimIndex];
+    glm::vec3 tpos = getKeyTranslation( kcollection, aMillis );
+    glm::vec3 tscale = getKeyScale( kcollection, aMillis );
+    glm::quat tquat = getKeyRotation( kcollection, aMillis );
+    
+    mFbxGlobalPosition = convertGlmToFbx( tpos, tquat, tscale );
 }
 
 //--------------------------------------------------------------
 void Mesh::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
+    
     ofxFBXSource::Node::update( aAnimIndex1, aAnim1Millis, aAnimIndex2, aAnim2Millis, aMixPct );
+    
+    auto& kcollection1 = getGlobalKeyCollection(aAnimIndex1);
+    auto& kcollection2 = getGlobalKeyCollection(aAnimIndex2);
+    
+    aMixPct = ofClamp(aMixPct, 0.0, 1.0);
+    float invpct = 1.0 - aMixPct;
+    
+    glm::vec3 tpos1 = getKeyTranslation( kcollection1, aAnim1Millis );
+    glm::vec3 tpos2 = getKeyTranslation( kcollection2, aAnim2Millis);
+    
+    glm::vec3 tscale1 = getKeyScale( kcollection1, aAnim1Millis );
+    glm::vec3 tscale2 = getKeyScale( kcollection2, aAnim2Millis );
+    
+    ofQuaternion tquat1 = getKeyRotation( kcollection1, aAnim1Millis );
+    ofQuaternion tquat2 = getKeyRotation( kcollection2, aAnim2Millis );
+    
+    
+    glm::vec3 tpos = tpos1 * invpct + tpos2 * aMixPct;
+    glm::vec3 tscale = tscale1 * invpct + tscale2 * aMixPct;
+    tquat1.slerp( aMixPct, tquat1, tquat2 );
+    glm::quat tquat = tquat1;
+    
+    mFbxGlobalPosition = convertGlmToFbx( tpos, tquat, tscale );
+    
 }
 
 //--------------------------------------------------------------
@@ -458,6 +499,55 @@ void Mesh::updateMeshFromKeyframesBlended( ofMesh* amesh, int aAnimIndex, signed
     
 }
 
+//----------------------------------------
+AnimKeyCollection& Mesh::getGlobalKeyCollection( int aAnimIndex ) {
+    if( mGlobalKeyCollections.count(aAnimIndex) < 1 ) {
+        AnimKeyCollection temp;
+        mGlobalKeyCollections[ aAnimIndex ] = temp;
+    }
+    return mGlobalKeyCollections[aAnimIndex];
+}
+
+//----------------------------------------
+void Mesh::addGlobalKeyToCollection( int aAnimIndex, signed long aMillis, FbxAMatrix& aFbxGlobalMatrix ) {
+    auto& kcollection = getGlobalKeyCollection(aAnimIndex);
+    glm::vec3 tpos, tscale;
+    glm::quat tquat;
+    fbxToGlmComponents(aFbxGlobalMatrix, tpos, tquat, tscale);
+    
+    ofxFBXSource::AnimKey<float> tkeyPosX;
+    tkeyPosX.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tkeyPosX.value = tpos.x;
+    kcollection.posKeysX.push_back( tkeyPosX );
+    ofxFBXSource::AnimKey<float> tkeyPosY;
+    tkeyPosY.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tkeyPosY.value = tpos.y;
+    kcollection.posKeysY.push_back( tkeyPosY );
+    ofxFBXSource::AnimKey<float> tkeyPosZ;
+    tkeyPosZ.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tkeyPosZ.value = tpos.z;
+    kcollection.posKeysZ.push_back( tkeyPosZ );
+
+    ofxFBXSource::AnimKey<float> tkeyScaleX;
+    tkeyScaleX.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tkeyScaleX.value = tscale.x;
+    kcollection.scaleKeysX.push_back( tkeyScaleX );
+    ofxFBXSource::AnimKey<float> tkeyScaleY;
+    tkeyScaleY.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tkeyScaleY.value = tscale.y;
+    kcollection.scaleKeysY.push_back( tkeyScaleY );
+    ofxFBXSource::AnimKey<float> tkeyScaleZ;
+    tkeyScaleZ.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tkeyScaleZ.value = tscale.z;
+    kcollection.scaleKeysZ.push_back( tkeyScaleZ );
+
+    ofxFBXSource::AnimKey<ofQuaternion> tRotKey;
+    tRotKey.millis = aMillis;//tanim.fbxCurrentTime.GetMilliSeconds();
+    tRotKey.value = tquat;
+    kcollection.rotKeys.push_back( tRotKey );
+    
+}
+
 //--------------------------------------------------------------
 void Mesh::updateMeshFromKeyframes( ofMesh* amesh, int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) {
     if(amesh == nullptr) return;
@@ -502,15 +592,20 @@ void Mesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer,
     
     const int lVertexCount = fbxMesh->GetControlPointsCount();
     
-    //    cout << "ofxFBXMesh :: " << getName() << " vertices: " << lVertexCount << " has blend shape: " << lHasShape << " has skin: " << lHasSkin << " has def: " << lHasDeformation << " has vertex cache: " << lHasVertexCache << " | " << ofGetFrameNum() << endl;
+//        cout << "ofxFBXMesh :: " << getName() << " vertices: " << lVertexCount << " has blend shape: " << lHasShape << " has skin: " << lHasSkin << " has def: " << lHasDeformation << " has vertex cache: " << lHasVertexCache << " | " << ofGetFrameNum() << endl;
     
     if(!lHasDeformation || lVertexCount < 3) return;
     
-    FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, pPose );
+    FbxAMatrix lGlobalOffPosition = mFbxGlobalPosition * mGeometryOffset;
+    
+//    FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime, pPose );
+//    FbxAMatrix lGlobalPosition = GetGlobalPosition( fbxMesh->GetNode(), pTime );
+    
     // Geometry offset.
     // it is not inherited by the children.
-    FbxAMatrix lGeometryOffset = GetGeometry( fbxMesh->GetNode() );
-    FbxAMatrix lGlobalOffPosition = lGlobalPosition * lGeometryOffset;
+    // this is now set in the setup function
+//    FbxAMatrix lGeometryOffset = GetGeometry( fbxMesh->GetNode() );//, FbxNode::eDestinationPivot );
+//    FbxAMatrix lGlobalOffPosition = lGlobalPosition * mGeometryOffset;//lGeometryOffset;
     
     FbxVector4* lVertexArray = NULL;
     lVertexArray = new FbxVector4[ lVertexCount ];
@@ -647,7 +742,7 @@ void Mesh::draw( ofMesh* aMesh ) {
     }
     
     const int lSubMeshCount = subMeshes.size();
-    glEnable( GL_NORMALIZE );
+//    glEnable( GL_NORMALIZE );
     
     if(veebs.getIsAllocated()) {
         if(lSubMeshCount > 0) {
@@ -666,8 +761,7 @@ void Mesh::draw( ofMesh* aMesh ) {
             //            cout << "lElementCount = " << lElementCount << " mesh is using indices = " << mesh.hasIndices() << endl;
             
 #ifdef TARGET_OPENGLES
-            glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT,
-                           (void*)(sizeof(ofIndexType) * subMeshes[lIndex].indexOffset));
+            glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, reinterpret_cast<const GLvoid *>(lOffset));
 #else
             glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
 #endif
@@ -684,10 +778,25 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
         return;
     }
     
-//    cout << "ofxFBXSrcMesh :: aMesh num verts: " << aMesh->getNumVertices() << " num tcoords: " << aMesh->getNumTexCoords() << " update veebs: " << bUpdateTheVeeeeebs << " veebs num verts: " << veebs.getNumVertices() << " | " << ofGetFrameNum() << endl;
-//        cout << "ofxFBXMesh :: " << getName() << " verts: " << aMesh->haveVertsChanged() << " indices: " << aMesh->haveIndicesChanged() << " normals: " << aMesh->haveNormalsChanged() << " tex coords: " << aMesh->haveTexCoordsChanged() << " colors: " << aMesh->haveColorsChanged() << " | " << ofGetFrameNum() << endl;
+//    cout << "ofxFBXSrcMesh " << getName() << " :: update the vbo: " << bUpdateTheVeeeeebs << " | " << ofGetFrameNum() << endl;
 //    veebs.updateMesh( *aMesh );
     
+//    updateVertexData(mesh.getVerticesPointer(),mesh.getNumVertices());
+//    updateColorData(mesh.getColorsPointer(),mesh.getNumColors());
+//    updateNormalData(mesh.getNormalsPointer(),mesh.getNumNormals());
+//    updateTexCoordData(mesh.getTexCoordsPointer(),mesh.getNumTexCoords());
+    
+//    if(aMesh->haveVertsChanged()){
+//        if(getNumVertices()==0){
+//            vbo.clearVertices();
+//            vboNumVerts = getNumVertices();
+//        }else if(vboNumVerts<getNumVertices()){
+//            vbo.setVertexData(getVerticesPointer(),getNumVertices(),usage);
+//            vboNumVerts = getNumVertices();
+//        }else{
+//            vbo.updateVertexData(getVerticesPointer(),getNumVertices());
+//        }
+//    }
     
     if(bUpdateTheVeeeeebs || veebs.getNumVertices() < 1) {
         if( aMesh->hasVertices() ) {
@@ -752,14 +861,13 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
             veebs.drawElements( GL_TRIANGLES, veebs.getNumIndices() );
         } else {
         
-            if(bAllMaterialsEnabled) {
-                veebs.bind();
-            }
+            if(bAllMaterialsEnabled) veebs.bind();
             
             for( int lIndex = 0; lIndex < lSubMeshCount; ++lIndex ) {
                 if( lIndex < aMats.size() ) {
                     aMats[lIndex]->begin();
-                    
+
+                    GLsizei lOffset = subMeshes[lIndex].indexOffset * sizeof(unsigned int);
                     const GLsizei lElementCount = subMeshes[lIndex].totalIndices;
                     
                     if( bAllMaterialsEnabled ) {
@@ -767,9 +875,8 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
         //            cout << "lElementCount = " << lElementCount << " mesh is using indices = " << mesh.hasIndices() << endl;
 
                         #ifdef TARGET_OPENGLES
-                            glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, (void*)(sizeof(ofIndexType) * subMeshes[lIndex].indexOffset));
+                            glDrawElements(GL_TRIANGLES, lElementCount, GL_UNSIGNED_SHORT, reinterpret_cast<const GLvoid *>(lOffset));
                         #else
-                            GLsizei lOffset = subMeshes[lIndex].indexOffset * sizeof(unsigned int);
                             glDrawElements( GL_TRIANGLES, lElementCount, GL_UNSIGNED_INT, reinterpret_cast<const GLvoid *>(lOffset));
                         #endif
                     } else {
@@ -800,7 +907,7 @@ int Mesh::getNumSubMeshes() {
 //--------------------------------------------------------------
 bool Mesh::hasClusterDeformation() {
     if(fbxMesh == NULL) {
-        ofLogWarning("ofxFBSMesh :: Set the Node before calling hasClusterDeformation");
+        ofLogWarning("ofxFBXMesh :: Set the Node before calling hasClusterDeformation");
         return false;
     }
     return fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
@@ -876,6 +983,7 @@ bool Mesh::hasMeshKeyCollection( int aAnimIndex ) {
 void Mesh::clearKeyFrames() {
     mMeshKeyCollections.clear();
     ofxFBXSource::Node::clearKeyFrames();
+    mGlobalKeyCollections.clear();
     setUsingCachedMeshes( false );
 }
 
@@ -1000,20 +1108,20 @@ void Mesh::computeSkinDeformation( FbxAMatrix& pGlobalPosition, FbxTime& pTime, 
     FbxSkin::EType lSkinningType = lSkinDeformer->GetSkinningType();
     
     if(lSkinningType == FbxSkin::eLinear || lSkinningType == FbxSkin::eRigid) {
-        //        cout << "ofxFBXMesh :: computeSkinDeformation :: eRigid " << endl;
+//        cout << getName() << " - ofxFBXMesh :: computeSkinDeformation :: eRigid || eLinear -> computeLinearDeformation" << endl;
         computeLinearDeformation(pGlobalPosition, fbxMesh, pTime, pVertexArray, pPose, false );
         if( pNormalsArray != NULL ) {
             //            cout << "ofxFBXMesh :: computeSkinDeformation :: calculate normals array " << endl;
             computeLinearDeformation( pGlobalPosition, fbxMesh, pTime, pNormalsArray, pPose, true );
         }
     } else if(lSkinningType == FbxSkin::eDualQuaternion) {
-        //        cout << "ofxFBXMesh :: computeSkinDeformation :: eDualQuaternion " << endl;
+//        cout << getName() << " - ofxFBXMesh :: computeSkinDeformation :: eDualQuaternion " << endl;
         computeDualQuaternionDeformation(pGlobalPosition, fbxMesh, pTime, pVertexArray, pPose, false );
         if( pNormalsArray != NULL ) {
             computeLinearDeformation( pGlobalPosition, fbxMesh, pTime, pNormalsArray, pPose, true );
         }
     } else if(lSkinningType == FbxSkin::eBlend) {
-        //        cout << "ofxFBXMesh :: computeSkinDeformation :: eBlend " << endl;
+//        cout << getName() << " - ofxFBXMesh :: computeSkinDeformation :: eBlend " << endl;
         int lVertexCount = fbxMesh->GetControlPointsCount();
         FbxVector4* lVertexArrayLinear = new FbxVector4[lVertexCount];
         memcpy(lVertexArrayLinear, fbxMesh->GetControlPoints(), lVertexCount * sizeof(FbxVector4));
@@ -1078,15 +1186,27 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
     
     //    cout << "control points count = " << lVertexCount << " mesh verts = " << mesh.getNumVertices() << endl;
     
-    FbxAMatrix* lClusterDeformation = new FbxAMatrix[lVertexCount];
-    memset(lClusterDeformation, 0, lVertexCount * sizeof(FbxAMatrix));
+    if( mLClusterDeformCount != lVertexCount) {
+        if( mlClusterDeformations != NULL ) {
+            delete[] mlClusterDeformations;
+            mlClusterDeformations = NULL;
+        }
+        mLClusterDeformCount = lVertexCount;
+        mlClusterDeformations = new FbxAMatrix[mLClusterDeformCount];
+    }
+    
+    memset(mlClusterDeformations, 0, lVertexCount * sizeof(FbxAMatrix));
+    
+//    FbxAMatrix* lClusterDeformation = new FbxAMatrix[lVertexCount];
+//    memset(lClusterDeformation, 0, lVertexCount * sizeof(FbxAMatrix));
     
     double* lClusterWeight = new double[lVertexCount];
     memset(lClusterWeight, 0, lVertexCount * sizeof(double));
     
     if (lClusterMode == FbxCluster::eAdditive) {
         for (int i = 0; i < lVertexCount; ++i) {
-            lClusterDeformation[i].SetIdentity();
+//            lClusterDeformation[i].SetIdentity();
+            mlClusterDeformations[i].SetIdentity();
         }
     }
     
@@ -1096,6 +1216,7 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
     
     //    cout << "computeLinearDeformation :: number of skins = " << lSkinCount << endl;
     FbxAMatrix lInfluence;// = lVertexTransformMatrix;
+    FbxAMatrix lVertexTransformMatrix;
     for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex) {
         FbxSkin * lSkinDeformer = (FbxSkin *)pMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
         
@@ -1107,8 +1228,13 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
             
             //            cout << "lClusterIndex: " << lClusterIndex << endl;
             
-            FbxAMatrix lVertexTransformMatrix;
+//            FbxAMatrix lVertexTransformMatrix;
             computeClusterDeformation(pGlobalPosition, pMesh, lCluster, lVertexTransformMatrix, pTime, pPose, bNormals );
+            
+//            lVertexTransformMatrix = pGlobalPosition.Inverse() * lVertexTransformMatrix;
+//            lVertexTransformMatrix = pGlobalPosition * lVertexTransformMatrix;
+//            lVertexTransformMatrix = lVertexTransformMatrix * pGlobalPosition;
+//            lVertexTransformMatrix = lVertexTransformMatrix * pGlobalPosition.Inverse();
             
             int lVertexIndexCount = lCluster->GetControlPointIndicesCount();
             for (int k = 0; k < lVertexIndexCount; ++k) {
@@ -1134,16 +1260,17 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
                     //                    cout << "computeLinearDeformation :: clustermode = eAdditive" << endl;
                     // Multiply with the product of the deformations on the vertex.
                     MatrixAddToDiagonal(lInfluence, 1.0 - lWeight);
-                    lClusterDeformation[lIndex] = lInfluence * lClusterDeformation[lIndex];
+                    mlClusterDeformations[lIndex] = lInfluence * mlClusterDeformations[lIndex];
                     
                     // Set the link to 1.0 just to know this vertex is influenced by a link.
                     lClusterWeight[lIndex] = 1.0;
-                } else // lLinkMode == FbxCluster::eNormalize || lLinkMode == FbxCluster::eTotalOne
+                }
+                else // lLinkMode == FbxCluster::eNormalize || lLinkMode == FbxCluster::eTotalOne
                 {
                     //                    cout << "computeLinearDeformation :: clustermode = !!eAdditive" << endl;
                     //                    if(k == 0) cout << "computeLinearDeformation :: clustermode != eAdditive " << lInfluence << endl;
                     // Add to the sum of the deformations on the vertex.
-                    MatrixAdd(lClusterDeformation[lIndex], lInfluence);
+                    MatrixAdd(mlClusterDeformations[lIndex], lInfluence);
                     
                     // Add to the sum of weights to either normalize or complete the vertex.
                     lClusterWeight[lIndex] += lWeight;
@@ -1163,23 +1290,25 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
         
         // Deform the vertex if there was at least a link with an influence on the vertex,
         if (lWeight != 0.0) {
-            lDstVertex = lClusterDeformation[i].MultT(lSrcVertex);
+            lDstVertex = mlClusterDeformations[i].MultT(lSrcVertex);
             if (lClusterMode == FbxCluster::eNormalize) {
                 // In the normalized link mode, a vertex is always totally influenced by the links.
-                //                cout << i << " weight: " << lWeight << " enormalize " << endl;
+//                cout << i << " weight: " << lWeight << " enormalize " << endl;
                 lDstVertex /= lWeight;
             } else if (lClusterMode == FbxCluster::eTotalOne) {
                 // In the total 1 link mode, a vertex can be partially influenced by the links.
                 //                cout << i << " weight: " << lWeight << " eTotalOne " << endl;
                 lSrcVertex *= (1.0 - lWeight);
                 lDstVertex += lSrcVertex;
+            } else if( lClusterMode == FbxCluster::eAdditive ) {
+                ofLogNotice("Mesh :: computeLinearDeformation : ") << " | " << ofGetFrameNum() << endl;
             }
         } else {
-            //            cout << i << " weight is zero!! " << endl;
+            cout << i << " - Mesh::computeLinearDeformation weight is zero!! " << endl;
         }
     }
     
-    delete [] lClusterDeformation;
+//    delete [] lClusterDeformation;
     delete [] lClusterWeight;
 }
 
@@ -1335,17 +1464,19 @@ void Mesh::computeClusterDeformation(FbxAMatrix& pGlobalPosition,
     }
     
     if( bone != NULL && cluster != NULL ) {
-        //        cout << "computeClusterDeformation: bone != NULL && cluster != NULL " << bone->getName() << endl;
-        //        cout << "We have cached cluster and bone! " << bone->getName() << endl;
-        //        pVertexTransformMatrix = cluster->preTrans * bone->fbxTransform * cluster->postTrans;
-        //        pVertexTransformMatrix = cluster->preTrans * bone->fbxTransform * cluster->postTrans;
-        pVertexTransformMatrix = cluster->preTrans * bone->fbxTransform * cluster->postTrans;
+    //        cout << "computeClusterDeformation: bone != NULL && cluster != NULL " << bone->getName() << endl;
+    //        cout << "We have cached cluster and bone! " << bone->getName() << endl;
+//        cout << "ofxFBXSrcMesh :: computeClusterDeformation : has associate model: " << (pCluster->GetAssociateModel() ? "YES" : "NO") << " is additive: " << (lClusterMode == FbxCluster::eAdditive ? "YES" : "NO" ) << " | " << ofGetFrameNum() << endl;
+        
+        pVertexTransformMatrix = pGlobalPosition.Inverse() * bone->fbxTransform * cluster->postTrans;//lClusterInitPosition.Inverse() * lReferenceInitPosition;
         if( bNormal ) {
-            //            cout << "We have cached cluster andNORMAL bone! " << bone->getName() << endl;
+//            cout << "We have cached cluster andNORMAL bone! " << bone->getName() << endl;
             pVertexTransformMatrix = pVertexTransformMatrix.Inverse();
             pVertexTransformMatrix = pVertexTransformMatrix.Transpose();
         }
     } else {
+        
+        cout << "ofxFBXSrcMesh :: computeClusterDeformationbone bone is NULL or Cluster is NULL | " << ofGetFrameNum() << endl;
         
         FbxAMatrix lReferenceGlobalInitPosition;
         FbxAMatrix lReferenceGlobalCurrentPosition;

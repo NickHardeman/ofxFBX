@@ -1,6 +1,6 @@
 //
 //  ofxFBXSrcNurbsCurve.cpp
-//  ConnectionsWall-Nick
+
 //
 //  Created by Nick Hardeman on 7/11/19.
 //

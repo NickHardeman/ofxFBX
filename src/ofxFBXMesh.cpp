@@ -50,6 +50,12 @@ void ofxFBXMesh::update( FbxTime& pTime, FbxPose* pPose ) {
 void ofxFBXMesh::update( int aAnimIndex, signed long aMillis ) {
     _checkSrcMesh();
     if(mSrcMesh) {
+//        cout << "ofxFBXMesh :: update : " << aAnimIndex << " millis: " << aMillis << " | " << ofGetFrameNum() << endl;
+//        auto& kcoll = mSrcMesh->getKeyCollection(0);
+//        if( mSrcMesh->getName() == "digger_01" ) {
+//            cout << "ofxFBXMesh :: update : " << mSrcMesh->getName() << " coll: " << kcoll.name << " posX keys: " << kcoll.posKeysX.size()  << endl;
+//        }
+        
         mSrcMesh->update( aAnimIndex, aMillis );
         
         if( mSrcMesh->isUsingCachedMeshes() && mSrcMesh->hasMeshKeyCollection(aAnimIndex)) {
@@ -86,6 +92,11 @@ void ofxFBXMesh::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimInd
 void ofxFBXMesh::update() {
     _checkSrcMesh();
     if(mSrcMesh) {
+        
+//        if( mSrcMesh->getName() == "digger_01" ) {
+//            cout << "ofxFBXMesh :: update : " << mSrcMesh->getName() << " position: " << mSrcMesh->getPosition() << " rot: " << mSrcMesh->getOrientationQuat() << " | " << ofGetFrameNum() << endl;
+//        }
+        
         setPosition( mSrcMesh->getPosition() );
         setOrientation( mSrcMesh->getOrientationQuat() );
         setScale( mSrcMesh->getScale() );
@@ -98,7 +109,7 @@ void ofxFBXMesh::lateUpdate(FbxTime& pTime, FbxAnimLayer * pAnimLayer, FbxPose* 
     if(mSrcMesh) {
 //        signed long ctime = (signed long)pTime.GetMilliSeconds();
 //        if(mLastFbxTimeMillis != ctime ) {
-        if(!mSrcMesh->isUsingCachedMeshes() ) {
+        if( !mSrcMesh->isUsingCachedMeshes() ) {
             mSrcMesh->updateMesh( &mesh, pTime, pAnimLayer, pPose );
             bMeshDirty = true;
         } else {
@@ -115,10 +126,17 @@ void ofxFBXMesh::draw() {
         ofLogError("ofxFBXMesh::draw : src mesh is invalid! ") << getName();
         return;
     }
+    if( !isRenderEnabled() ) return;
+    
+//    if( getName() == "digger00_arm" ) {
+//        cout << "ofxFBXMesh :: draw : " << getName() << " getParent(): " << (getParent() == nullptr ? "nullptr" : "has parent") << " position: " << getPosition() << " | " << ofGetFrameNum() << endl;
+//    }
+    
     transformGL(); {
         if(bDrawMeshKeyframe) {
             mSrcMesh->drawMeshKeyframe( mLastAnimIndex, mLastFbxTimeMillis, mMaterials, bMeshDirty );
         } else {
+//            bMeshDirty=true;
             mSrcMesh->draw( &mesh, mMaterials, bMeshDirty );
         }
     } restoreTransformGL();
@@ -224,6 +242,17 @@ vector< shared_ptr<ofxFBXSource::MeshTexture> > ofxFBXMesh::getTextures() {
     vector< shared_ptr<ofxFBXSource::MeshTexture> > ttexs;
     for( auto mat : mMaterials ) {
         if( mat->hasSourceTexture() ) {
+            ttexs.push_back( mat->getSrcTexture() );
+        }
+    }
+    return ttexs;
+}
+
+//--------------------------------------------------------------
+vector< shared_ptr<ofxFBXSource::MeshTexture> > ofxFBXMesh::getEnabledTextures() {
+    vector< shared_ptr<ofxFBXSource::MeshTexture> > ttexs;
+    for( auto mat : mMaterials ) {
+        if( mat->hasSourceTexture() && mat->areTexturesEnabled() && mat->areMaterialsEnabled() ) {
             ttexs.push_back( mat->getSrcTexture() );
         }
     }

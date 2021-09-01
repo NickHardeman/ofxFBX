@@ -31,7 +31,7 @@ public:
     // keyframes update //
     void update( int aAnimIndex, signed long aMillis ) override;
     void update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, signed long aAnim2Millis, float aMixPct ) override;
-    void lateUpdate();
+//    void lateUpdate();
     
 //    void draw( float aLen = 6.f, bool aBDrawAxes = true );
     

@@ -51,14 +51,22 @@ void ofxFBXBone::update() {
 //--------------------------------------------------------------------------------
 void ofxFBXBone::lateUpdate() {
     if( bUpdateFromAnimation ) {
+        
+//        if( getName() == "baseArm" ) {
+//            cout << "ofxFBXBone :: lateUpdate : " << getName() << " isRoot: " << boneSrc->isRoot() << " getParent: " << (getParent() != nullptr ? " has parent " : " no parent!" ) << " | " << ofGetFrameNum() << endl;
+//        }
+//
         if( boneSrc->isRoot() && getParent() != NULL ) {
-            boneSrc->setPosition( getPosition() + getParent()->getPosition() );
-            auto invParent = glm::inverse( getParent()->getOrientationQuat() );
-            auto m44 = invParent * getOrientationQuat();
-            boneSrc->setOrientation(m44);
-    //        boneSrc->setOrientation( getGlobalOrientation() );
-    //        boneSrc->setScale( getScale()*getParent()->getGlobalScale() );
-            boneSrc->setScale( getScale() );
+//            cout << "ofxFBXBone :: lateUpdate : setting the position of the root bone " << getName() << " parent pos: " << getParent()->getGlobalPosition() << " global pos: " << getGlobalPosition() << " | " << ofGetFrameNum() << endl;
+////            boneSrc->setGlobalPosition( getPosition() + (1.f/getScale() * getParent()->getGlobalPosition()) );
+//            auto invParent = glm::inverse( getParent()->getGlobalOrientation() );
+//            auto m44 = invParent * getOrientationQuat();
+////            boneSrc->setGlobalOrientation(m44);
+            ///
+            boneSrc->setGlobalPosition( getGlobalPosition() );
+            boneSrc->setGlobalOrientation( getGlobalOrientation() );
+            boneSrc->setScale( getGlobalScale() );
+//        }
         } else {
             boneSrc->setPosition( getPosition() );
             boneSrc->setOrientation( getOrientationQuat() );

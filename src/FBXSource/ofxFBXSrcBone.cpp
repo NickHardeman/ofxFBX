@@ -1,6 +1,6 @@
 //
 //  ofxFBXSrcBone.cpp
-//  ConnectionsWall-Nick
+
 //
 //  Created by Nick Hardeman on 7/11/19.
 //
@@ -95,13 +95,13 @@ void Bone::update( int aAnimIndex, signed long aMillis ) {
 //        }
     }
     
-    if( bIsRoot ) {
+//    if( bIsRoot ) {
 //        cout << "ofxFBXSource::Bone :: update : is root : " << getName() << " animations: " << isAnimationEnabled() << " skel root: " << mFbxNode->GetSkeleton()->IsSkeletonRoot() << " | " << ofGetFrameNum() << endl;
 //        if( getParent() != NULL ) {
 //            cout << " getParent position: " << getParent()->getPosition() << endl;
 //        }
         
-    }
+//    }
     
     map<string, shared_ptr<Bone> >::iterator it;
     for(it = childBones.begin(); it != childBones.end(); ++it ) {
@@ -121,28 +121,28 @@ void Bone::update( int aAnimIndex1, signed long aAnim1Millis, int aAnimIndex2, s
     }
 }
 
-//--------------------------------------------------------------
-void Bone::lateUpdate() {
-//    ofxFBXBone* sbone   = sourceBone;
-//    if( sbone != NULL ) {
-//        setPosition( getPosition() );
-//        setOrientation( getOrientationQuat() );
-//        setScale( getScale() );
-//        sbone->setGlobalPosition( getGlobalPosition() );
-//        sbone->setGlobalOrientation( getGlobalOrientation() );
-//        sbone->setScale( getScale() );
-//        sbone->setGlobalSca( getGlobalScale() );
-
-//        sbone->setTransformMatrix( getLocalTransformMatrix() );
-//        sbone->setTransformMatrix( getGlobalTransformMatrix() );
-    updateFbxTransform();
-    //    }
-    
-    map<string, shared_ptr<Bone> >::iterator it;
-    for(it = childBones.begin(); it != childBones.end(); ++it ) {
-        it->second->lateUpdate();
-    }
-}
+////--------------------------------------------------------------
+//void Bone::lateUpdate() {
+////    ofxFBXBone* sbone   = sourceBone;
+////    if( sbone != NULL ) {
+////        setPosition( getPosition() );
+////        setOrientation( getOrientationQuat() );
+////        setScale( getScale() );
+////        sbone->setGlobalPosition( getGlobalPosition() );
+////        sbone->setGlobalOrientation( getGlobalOrientation() );
+////        sbone->setScale( getScale() );
+////        sbone->setGlobalSca( getGlobalScale() );
+//
+////        sbone->setTransformMatrix( getLocalTransformMatrix() );
+////        sbone->setTransformMatrix( getGlobalTransformMatrix() );
+//    updateFbxTransform();
+//    //    }
+//
+//    map<string, shared_ptr<Bone> >::iterator it;
+//    for(it = childBones.begin(); it != childBones.end(); ++it ) {
+//        it->second->lateUpdate();
+//    }
+//}
 
 //--------------------------------------------------------------
 //void Bone::draw( float aLen, bool aBDrawAxes ) {
@@ -169,6 +169,7 @@ void Bone::lateUpdate() {
 void Bone::updateFbxTransform() {
     // we need to convert this back before sending //
     fbxTransform = toFbx( getGlobalPosition(), getGlobalOrientation(), getGlobalScale() );
+//    fbxTransform = toFbx( getPosition(), getOrientationQuat(), getScale() );
 }
 
 //--------------------------------------------------------------
@@ -184,8 +185,8 @@ void Bone::clearKeyFrames() {
 //--------------------------------------------------------------
 bool Bone::isLimb() {
     FbxSkeleton* lSkeleton = getFbxSkeleton();
-    if(lSkeleton) {
-        lSkeleton->GetSkeletonType() == FbxSkeleton::eLimbNode;
+    if(lSkeleton && lSkeleton->GetSkeletonType() == FbxSkeleton::eLimbNode ) {
+//        lSkeleton->GetSkeletonType() == FbxSkeleton::eLimbNode;
         return true;
     }
     return false;

@@ -150,18 +150,18 @@ FbxAMatrix ofxFBXSource::GetPoseMatrix(FbxPose* pPose, int pNodeIndex)
 }
 
 // Get the geometry offset to a node. It is never inherited by the children.
-FbxAMatrix ofxFBXSource::GetGeometry(FbxNode* pNode)
+FbxAMatrix ofxFBXSource::GetGeometry(FbxNode* pNode, FbxNode::EPivotSet pPivot)
 {
-    const FbxVector4 lT = pNode->GetGeometricTranslation(FbxNode::eSourcePivot);
-    const FbxVector4 lR = pNode->GetGeometricRotation(FbxNode::eSourcePivot);
-    const FbxVector4 lS = pNode->GetGeometricScaling(FbxNode::eSourcePivot);
+    const FbxVector4 lT = pNode->GetGeometricTranslation(pPivot);
+    const FbxVector4 lR = pNode->GetGeometricRotation(pPivot);
+    const FbxVector4 lS = pNode->GetGeometricScaling(pPivot);
 
     return FbxAMatrix(lT, lR, lS);
 }
 
 
 // Scale all the elements of a matrix.
-void ofxFBXSource::MatrixScale(FbxAMatrix& pMatrix, double pValue)
+void ofxFBXSource::MatrixScale(FbxAMatrix& pMatrix, const double& pValue)
 {
     int i,j;
     
@@ -176,7 +176,7 @@ void ofxFBXSource::MatrixScale(FbxAMatrix& pMatrix, double pValue)
 
 
 // Add a value to all the elements in the diagonal of the matrix.
-void ofxFBXSource::MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue)
+void ofxFBXSource::MatrixAddToDiagonal(FbxAMatrix& pMatrix, const double& pValue)
 {
     pMatrix[0][0] += pValue;
     pMatrix[1][1] += pValue;
@@ -186,7 +186,7 @@ void ofxFBXSource::MatrixAddToDiagonal(FbxAMatrix& pMatrix, double pValue)
 
 
 // Sum two matrices element by element.
-void ofxFBXSource::MatrixAdd(FbxAMatrix& pDstMatrix, FbxAMatrix& pSrcMatrix)
+void ofxFBXSource::MatrixAdd(FbxAMatrix& pDstMatrix, const FbxAMatrix& pSrcMatrix)
 {
     int i,j;
     

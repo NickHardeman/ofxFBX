@@ -21,7 +21,7 @@ void ofxFBXSkeleton::setup( shared_ptr<ofxFBXSource::Node> anode ) {
         if( tskel ) {
             root = make_shared<ofxFBXBone>();
             root->setParent(*this);
-            //root->setup( anode );
+            root->setup( anode );
             root->setBoneSource( tskel->root, root );
             addChild(root);
         }
@@ -38,7 +38,6 @@ void ofxFBXSkeleton::update( FbxTime& pTime, FbxPose* pPose ) {
     _checkSrcSkel();
     if(mSrcSkel) {
         mSrcSkel->update( pTime, pPose );
-        
     }
 }
 
@@ -46,6 +45,7 @@ void ofxFBXSkeleton::update( FbxTime& pTime, FbxPose* pPose ) {
 void ofxFBXSkeleton::update( int aAnimIndex, signed long aMillis ) {
     _checkSrcSkel();
 //    cout << "ofxFBXSkeleton::update " << getName() << " : src skel: " << ( mSrcSkel ? "Good" : "Bad" ) << " | " << ofGetFrameNum() << endl;
+//    cout << "ofxFBXSkeleton::update " << getName() << " : parent: " << ( getParent() ? mParentNode->getName() : "NO PARENT" ) << " | " << ofGetFrameNum() << endl;
     if(mSrcSkel) {
         mSrcSkel->update( aAnimIndex, aMillis );
     }
@@ -89,7 +89,10 @@ shared_ptr<ofxFBXBone> ofxFBXSkeleton::getBone( string aName ) {
 
 //----------------------------------------------------------------
 string ofxFBXSkeleton::getAsString( int aLevel ) {
-    string tstr = "Skeleton: " + root->getName()+ " total bones: " + ofToString( getNumBones(), 0 ) + "\n ";
+    string bHasParent = getFbxNode()->GetParent() != nullptr ? "yes" : "no";
+    string parepar = hasParentNode() ? "yes" : "no";
+    string npare = getParent() ? "yes" : "no";
+    string tstr = "Skeleton: " + root->getName()+ " total bones: " + ofToString( getNumBones(), 0 ) + " parent: " + bHasParent + " has fbxnode parent: " + parepar + " has of node parent: " + npare + "\n ";
     return (tstr + root->getAsString(1));
 }
 

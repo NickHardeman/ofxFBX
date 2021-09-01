@@ -42,6 +42,7 @@ public:
         bool useKeyFrames = true;
         bool printInfo = false;
         string filePath = "";
+        bool enableMaterials = true;
         // used if load called directly from ofxFBX. ofxFBX will create an internal instance
         // setting to true will remove that internal instance when nothing is using it.
         bool unloadIfUnused = false;
@@ -50,6 +51,7 @@ public:
         bool cacheMeshKeyframes = false;
         // if the meshes are cached, should they be blended between frames, heavier cpu use, smoother appearance //
         bool blendCachedMeshKeyframes = false;
+        string overrideFbmFolderPath = "";
     };
     
     Scene();
