@@ -6,7 +6,7 @@ OFXFBX_ROOT=$DIR/../../..
 
 mkdir -p /tmp/fbx20195_fbxsdk_linux
 cd /tmp/fbx20195_fbxsdk_linux
-wget https://www.autodesk.com/content/dam/autodesk/www/adn/fbx/20195/fbx20195_fbxsdk_linux.tar.gz
+wget --user-agent="openFrameworks" https://www.autodesk.com/content/dam/autodesk/www/adn/fbx/20195/fbx20195_fbxsdk_linux.tar.gz
 tar xvfz fbx20195_fbxsdk_linux.tar.gz
 
 # install in temp directory (not system wide)
