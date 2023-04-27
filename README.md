@@ -8,7 +8,7 @@
 
 Updated to maintain the hierarchy of the fbx file. Added getter / search functions. 
 Not compatible with older versions of the addon.
-Currently supporting OSX, iOS, Windows Visual Studio and Linux. Tested with OF >= v0.10. Please check older releases for compatibility with older versions of OF. Linux support thanks to @themancalledjakob
+Currently supporting OSX (x86_64 and arm64), iOS (x86_64, armv7, armv7s and arm64), Windows Visual Studio (x64) Linux and Linux64. Tested with OF >= v0.11.2. Please check older releases for compatibility with older versions of OF. Linux support with help from @themancalledjakob
 
 Features include:
 * Multiple Animations with individual control
@@ -34,10 +34,6 @@ If you have a fbx with a single animation that needs to be broken up into separa
 `mScene.addAnimation("SwimBite", 81, 100 );`
 
 `mScene.addAnimation("Swim", 61, 80 );`
-
-
-### Windows Visual Studio 2017 Notes
-To compile in Debug mode, unzip the lib in `ofxFBX/libs/fbxsdk_2016.1/lib/vs/x64/Debug`
 
 ### iOS Notes
 The example projects include a ofApp.cpp and main.cpp. The project generator will be looking for ofApp.mm and main.mm. Please add the .cpp versions. You will need to tell the compiler to treat them as Objective-C++. Click on ofApp.cpp and then select Objective-C++ from the drop down menu. Do the same for main.cpp. (see below image.)
