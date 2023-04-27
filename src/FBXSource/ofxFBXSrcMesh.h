@@ -49,6 +49,22 @@ public:
     vector<MeshAnimKey> meshKeys;
 };
 
+class MeshVertexBoneWeights {
+public:
+	
+	struct ClusterWeight {
+		int clusterIndex = 0;
+		float clusterWeight = 0.f;
+	};
+	
+	static bool sortClusterWeights( const ClusterWeight& aa, const ClusterWeight& ab ) {
+		return aa.clusterWeight < ab.clusterWeight;
+	}
+	
+	vector<int> clusterIndices;
+	vector<float> clusterWeights;
+};
+
 class Mesh : public ofxFBXSource::Node {
 public:
     Mesh();
@@ -85,6 +101,7 @@ public:
     vector< shared_ptr<ofxFBXSource::MeshTexture> > getTextures();
     
     bool hasClusterDeformation();
+	int getNumClusters();
     
     ofVbo& getVbo();
     ofMesh& getOFMesh();
@@ -101,6 +118,8 @@ public:
     // global keys used for bone vertex manipulations //
     ofxFBXSource::AnimKeyCollection& getGlobalKeyCollection( int aAnimIndex );
     void addGlobalKeyToCollection( int aAnimIndex, signed long aMillis, FbxAMatrix& aFbxGlobalMatrix );
+	
+	vector< MeshVertexBoneWeights > getMeshVertexBoneWeights(int aMaxBonesPerVert=4);
     
 private:
     void _configureMeshFromSrcMesh( ofMesh* aSrcMesh, ofMesh* amesh );
@@ -119,13 +138,17 @@ private:
                                           FbxVector4* pVertexArray,
                                           FbxPose* pPose,
                                           bool bNormals);
-    void computeClusterDeformation(FbxAMatrix& pGlobalPosition,
-                                   FbxMesh* pMesh,
-                                   FbxCluster* pCluster,
-                                   FbxAMatrix& pVertexTransformMatrix,
-                                   FbxTime pTime,
-                                   FbxPose* pPose,
-                                   bool bNormals);
+	
+	void computeClusterDeformation(FbxAMatrix& pGlobalPosition,
+								   FbxAMatrix& pGlobalPositionInv,
+								   FbxMesh* pMesh,
+								   FbxCluster* pCluster,
+								   FbxAMatrix& pVertexTransformMatrix,
+								   FbxTime& pTime,
+								   FbxPose* pPose,
+								   bool bNormals);
+	
+	
     
     void populateNormals( FbxVector4* pNormalsArray );
     

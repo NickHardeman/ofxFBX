@@ -305,7 +305,7 @@ void Mesh::setFBXMesh( FbxMesh* lMesh ) {
     }
     
     // associate the materials with the sub meshes //
-    int lSubMeshCount = subMeshes.size();
+    int lSubMeshCount = (int)subMeshes.size();
     for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex) {
         const FbxSurfaceMaterial * lMaterial = fbxMesh->GetNode()->GetMaterial(lIndex);
         if(lMaterial) {
@@ -580,7 +580,6 @@ void Mesh::updateMeshFromKeyframes( ofMesh* amesh, int aAnimIndex1, signed long 
             tnormals[i] = tnormals[i] * invpct + srcNormals[i] * aMixPct;
         }
     }
-    
 }
 
 //--------------------------------------------------------------
@@ -626,11 +625,12 @@ void Mesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer,
     }
     if(lHasSkin) {
         //we need to get the number of clusters. which are controlled by bones //
-        const int lSkinCount = fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
-        int lClusterCount = 0;
-        for (int lSkinIndex = 0; lSkinIndex < lSkinCount; ++lSkinIndex) {
-            lClusterCount += ((FbxSkin *)(fbxMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin)))->GetClusterCount();
-        }
+//        const int lSkinCount = fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
+//        int lClusterCount = 0;
+//        for (int lSkinIndex = 0; lSkinIndex < lSkinCount; ++lSkinIndex) {
+//            lClusterCount += ((FbxSkin *)(fbxMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin)))->GetClusterCount();
+//        }
+		int lClusterCount = getNumClusters();
         if (lClusterCount) {
             computeSkinDeformation( lGlobalOffPosition, pTime, pAnimLayer, lVertexArray, lNormalArray, pPose );
         }
@@ -653,7 +653,6 @@ void Mesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer,
         if( mNormalMappingMode == FbxGeometryElement::eByControlPoint ) {
             for(int i = 0; i < controlPointCount; i++ ) {
                 amnormals[i] = glm::vec3( lNormalArray[i][0], lNormalArray[i][1], lNormalArray[i][2] );
-                //                amnormals[i].normalize();
             }
         } else if( mNormalMappingMode == FbxGeometryElement::eByPolygonVertex ) {
             const int lPolygonCount = fbxMesh->GetPolygonCount();
@@ -664,64 +663,13 @@ void Mesh::updateMesh( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer,
                 for (int lVerticeIndex = 0; lVerticeIndex < polysize; ++lVerticeIndex) {
                     
                     const int lControlPointIndex = fbxMesh->GetPolygonVertex( lPolygonIndex, lVerticeIndex );
-                    //                    amverts[lControlPointIndex].set(lVertexArray[lControlPointIndex][0],
-                    //                                                    lVertexArray[lControlPointIndex][1],
-                    //                                                    lVertexArray[lControlPointIndex][2]);
-                    //                    if( bUpdateNormals ) {
                     amnormals[lControlPointIndex] = glm::vec3(lNormalArray[ lControlPointIndex ][0],
                                                               lNormalArray[ lControlPointIndex ][1],
                                                               lNormalArray[ lControlPointIndex ][2] );
-                    //                        amnormals[lControlPointIndex].normalize();
-                    //                    }
                 }
             }
         }
     }
-    
-    //    if(bAllMappedByControlPoint) {
-    ////        cout << "updateMesh :: bAllMappedByControlPoint : " << endl;
-    //        for(int i = 0; i < fbxMesh->GetControlPointsCount(); i++ ) {
-    //            amverts[i].set( lVertexArray[i][0], lVertexArray[i][1], lVertexArray[i][2] );
-    //            if( bUpdateNormals ) {
-    //                amnormals[i].set( lNormalArray[i][0], lNormalArray[i][1], lNormalArray[i][2] );
-    //                amnormals[i].normalize();
-    //            }
-    //        }
-    //    } else {
-    ////        cout << "updateMesh :: !bAllMappedByControlPoint : normals: " << bUpdateNormals << endl;
-    //        const int lPolygonCount = fbxMesh->GetPolygonCount();
-    //        int tvertcount = 0;
-    //        for (int lPolygonIndex = 0; lPolygonIndex < lPolygonCount; ++lPolygonIndex) {
-    //            for (int lVerticeIndex = 0; lVerticeIndex < 3; ++lVerticeIndex) {
-    //
-    //                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
-    //                amverts[lControlPointIndex].set(lVertexArray[lControlPointIndex][0],
-    //                                        lVertexArray[lControlPointIndex][1],
-    //                                        lVertexArray[lControlPointIndex][2]);
-    //                if( bUpdateNormals ) {
-    //                    amnormals[lControlPointIndex].set(lNormalArray[ lControlPointIndex ][0],
-    //                                              lNormalArray[ lControlPointIndex ][1],
-    //                                              lNormalArray[ lControlPointIndex ][2] );
-    //                    amnormals[lControlPointIndex].normalize();
-    //                }
-    ////                ++tvertcount;
-    //
-    //                //  WORKING ////////////
-    ////                const int lControlPointIndex = fbxMesh->GetPolygonVertex(lPolygonIndex, lVerticeIndex);
-    ////                amverts[tvertcount].set(lVertexArray[lControlPointIndex][0],
-    ////                                        lVertexArray[lControlPointIndex][1],
-    ////                                        lVertexArray[lControlPointIndex][2]);
-    ////                if( bUpdateNormals ) {
-    ////                    amnormals[tvertcount].set(lNormalArray[ lControlPointIndex ][0],
-    ////                                              lNormalArray[ lControlPointIndex ][1],
-    ////                                              lNormalArray[ lControlPointIndex ][2] );
-    ////                    amnormals[tvertcount].normalize();
-    ////                }
-    ////                ++tvertcount;
-    //                // !-- WORKING ///////////////
-    //            }
-    //        }
-    //    }
     
     delete [] lVertexArray;
     if( lNormalArray != NULL ) {
@@ -741,8 +689,8 @@ void Mesh::draw( ofMesh* aMesh ) {
         veebs.enableColors();
     }
     
-    const int lSubMeshCount = subMeshes.size();
-//    glEnable( GL_NORMALIZE );
+    const int lSubMeshCount = (int)subMeshes.size();
+	//glEnable( GL_NORMALIZE );
     
     if(veebs.getIsAllocated()) {
         if(lSubMeshCount > 0) {
@@ -800,19 +748,19 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
     
     if(bUpdateTheVeeeeebs || veebs.getNumVertices() < 1) {
         if( aMesh->hasVertices() ) {
-            veebs.updateVertexData( aMesh->getVerticesPointer(), aMesh->getNumVertices() );
+            veebs.updateVertexData( aMesh->getVerticesPointer(), (int)aMesh->getNumVertices() );
         }
         
         if( aMesh->hasColors() && aMesh->usingColors() ) {
-            veebs.updateColorData( aMesh->getColorsPointer(), aMesh->getNumColors() );
+            veebs.updateColorData( aMesh->getColorsPointer(), (int)aMesh->getNumColors() );
         }
         
         if( aMesh->hasNormals() && aMesh->usingNormals() ) {
-            veebs.updateNormalData(aMesh->getNormalsPointer(),aMesh->getNumNormals());
+            veebs.updateNormalData(aMesh->getNormalsPointer(), (int)aMesh->getNumNormals());
         }
         
         if( aMesh->hasTexCoords() && aMesh->usingTextures() ) {
-            veebs.updateTexCoordData( aMesh->getTexCoordsPointer(), aMesh->getNumTexCoords() );
+            veebs.updateTexCoordData( aMesh->getTexCoordsPointer(), (int)aMesh->getNumTexCoords() );
         }
     }
     
@@ -835,9 +783,9 @@ void Mesh::draw( ofMesh* aMesh, vector< shared_ptr<ofxFBXMeshMaterial> >& aMats,
         veebs.enableColors();
     }
     
-    const int lSubMeshCount = subMeshes.size();
+    const int lSubMeshCount = (int)subMeshes.size();
     if( veebs.getIsAllocated() && lSubMeshCount > 0 ) {
-//        glEnable( GL_NORMALIZE ); // <-- dont think we need this anymore //
+        //glEnable( GL_NORMALIZE ); // <-- dont think we need this anymore //
         
 //        #ifndef TARGET_OPENGLES
 ////          // GLES does not support glPolygonMode
@@ -913,16 +861,29 @@ bool Mesh::hasClusterDeformation() {
     return fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
 }
 
+//--------------------------------------------------------------
+int Mesh::getNumClusters() {
+	if( !hasClusterDeformation() ) {
+		return 0;
+	}
+	const int lSkinCount = fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
+	int lClusterCount = 0;
+	for (int lSkinIndex = 0; lSkinIndex < lSkinCount; ++lSkinIndex) {
+		lClusterCount += ((FbxSkin *)(fbxMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin)))->GetClusterCount();
+	}
+	return lClusterCount;
+}
+
 #pragma mark - Materials + Textures
 //--------------------------------------------------------------
 int Mesh::getNumMaterials() {
-    return getMaterials().size();
+    return (int)getMaterials().size();
 }
 
 //--------------------------------------------------------------
 vector< ofxFBXSource::MeshMaterial* > Mesh::getMaterials() {
     vector< ofxFBXSource::MeshMaterial* > rMaterials;
-    int lSubMeshCount = subMeshes.size();
+    int lSubMeshCount = (int)subMeshes.size();
     for (int lIndex = 0; lIndex < lSubMeshCount; ++lIndex) {
         const FbxSurfaceMaterial * lMaterial = fbxMesh->GetNode()->GetMaterial(lIndex);
         ofxFBXSource::MeshMaterial* lMaterialCache = NULL;
@@ -1025,6 +986,104 @@ MeshAnimKey& Mesh::getMeshAnimKey( int aAnimIndex, signed long aMillis ) {
     return dummyMeshAnimKey;
 }
 
+//--------------------------------------------------------------
+vector<MeshVertexBoneWeights> Mesh::getMeshVertexBoneWeights(int aMaxBonesPerVert) {
+	vector<MeshVertexBoneWeights> tweights;
+	
+	if( !hasClusterDeformation() ) {
+		ofLogError( "Mesh :: getMeshVertexBoneWeights : no skin detected for mesh, so no weights." );
+		return tweights;
+	}
+	
+	//we need to get the number of clusters. which are controlled by bones //
+	int lClusterCount = getNumClusters();
+	
+	if( lClusterCount < 0 ) {
+		ofLogError( "Mesh :: getMeshVertexBoneWeights : no bones (clusters) detected for mesh, so no weights." );
+		return tweights;
+	}
+	
+	//computeSkinDeformation( lGlobalOffPosition, pTime, pAnimLayer, lVertexArray, lNormalArray, pPose );
+	FbxSkin * lSkinDeformer = (FbxSkin *)fbxMesh->GetDeformer(0, FbxDeformer::eSkin);
+	FbxSkin::EType lSkinningType = lSkinDeformer->GetSkinningType();
+	
+	if(lSkinningType != FbxSkin::eLinear && lSkinningType != FbxSkin::eRigid) {
+		ofLogError("Mesh :: getMeshVertexBoneWeights : only FbxSkin::eLinear || FbxSkin::eRigid deformation types supported.");
+		return tweights;
+	}
+	
+	// computeLinearDeformation
+	// we need to return this somehow since it's important for how to multiply the matrices
+	FbxCluster::ELinkMode lClusterMode = ((FbxSkin*)fbxMesh->GetDeformer(0, FbxDeformer::eSkin))->GetCluster(0)->GetLinkMode();
+	int lVertexCount = fbxMesh->GetControlPointsCount();
+	int lSkinCount = fbxMesh->GetDeformerCount(FbxDeformer::eSkin);
+	
+	//    FbxAMatrix* lClusterDeformation = new FbxAMatrix[lVertexCount];
+	//    memset(lClusterDeformation, 0, lVertexCount * sizeof(FbxAMatrix));
+	
+	tweights.assign(lVertexCount, MeshVertexBoneWeights() );
+	
+	for ( int lSkinIndex=0; lSkinIndex<lSkinCount; ++lSkinIndex) {
+		FbxSkin * lSkinDeformer = (FbxSkin *)fbxMesh->GetDeformer(lSkinIndex, FbxDeformer::eSkin);
+		
+		int lClusterCount = lSkinDeformer->GetClusterCount();
+		for ( int lClusterIndex=0; lClusterIndex<lClusterCount; ++lClusterIndex) {
+			FbxCluster* lCluster = lSkinDeformer->GetCluster(lClusterIndex);
+			if (!lCluster->GetLink()) {
+				continue;
+			}
+			int lVertexIndexCount = lCluster->GetControlPointIndicesCount();
+			for (int k = 0; k < lVertexIndexCount; ++k) {
+				int lIndex = lCluster->GetControlPointIndices()[k];
+				
+				// Sometimes, the mesh can have less points than at the time of the skinning
+				// because a smooth operator was active when skinning but has been deactivated during export.
+				if (lIndex >= lVertexCount) {
+					continue;
+				}
+				
+				double lWeight = lCluster->GetControlPointWeights()[k];
+				if (lWeight == 0.0) {
+					continue;
+				}
+				
+				if (lClusterMode == FbxCluster::eAdditive) {
+					// Set the link to 1.0 just to know this vertex is influenced by a link.
+					//lClusterWeight[lIndex] = 1.0;
+					lWeight = 1.0;
+				}
+				else // lLinkMode == FbxCluster::eNormalize || lLinkMode == FbxCluster::eTotalOne
+				{
+					// Add to the sum of weights to either normalize or complete the vertex.
+//					lClusterWeight[lIndex] += lWeight;
+				}
+				
+				tweights[lIndex].clusterIndices.push_back(lClusterIndex);
+				tweights[lIndex].clusterWeights.push_back(lWeight);
+			}
+		}
+	}
+	
+	// lets loop through and redistribute too many weights //
+	size_t numWeights = tweights.size();
+	for( int i = 0; i < numWeights; i++ ) {
+		if( tweights[i].clusterIndices.size() > aMaxBonesPerVert ) {
+			// sort from highest to lowest, we are going to nix the low weights //
+			vector< MeshVertexBoneWeights::ClusterWeight > cweights;
+			for( int j = 0; j < tweights[i].clusterIndices.size(); j++ ) {
+				MeshVertexBoneWeights::ClusterWeight cw;
+				cw.clusterIndex = tweights[i].clusterIndices[j];
+				cw.clusterWeight = tweights[i].clusterWeights[j];
+				cweights.push_back(cw);
+			}
+			// sort weights, lowest to highest
+		}
+	}
+	
+	
+	return tweights;
+}
+
 #pragma mark - Deformations
 //--------------------------------------------------------------
 void Mesh::computeBlendShapes( ofMesh* aMesh, FbxTime& pTime, FbxAnimLayer * pAnimLayer ) {
@@ -1108,20 +1167,20 @@ void Mesh::computeSkinDeformation( FbxAMatrix& pGlobalPosition, FbxTime& pTime, 
     FbxSkin::EType lSkinningType = lSkinDeformer->GetSkinningType();
     
     if(lSkinningType == FbxSkin::eLinear || lSkinningType == FbxSkin::eRigid) {
-//        cout << getName() << " - ofxFBXMesh :: computeSkinDeformation :: eRigid || eLinear -> computeLinearDeformation" << endl;
+        ofLogVerbose("ofxFBXSrcMesh") << getName() << " - computeSkinDeformation :: eRigid || eLinear -> computeLinearDeformation" << endl;
         computeLinearDeformation(pGlobalPosition, fbxMesh, pTime, pVertexArray, pPose, false );
         if( pNormalsArray != NULL ) {
-            //            cout << "ofxFBXMesh :: computeSkinDeformation :: calculate normals array " << endl;
+			ofLogVerbose("ofxFBXSrcMesh") << getName() << " - computeSkinDeformation :: calculate normals array " << endl;
             computeLinearDeformation( pGlobalPosition, fbxMesh, pTime, pNormalsArray, pPose, true );
         }
     } else if(lSkinningType == FbxSkin::eDualQuaternion) {
-//        cout << getName() << " - ofxFBXMesh :: computeSkinDeformation :: eDualQuaternion " << endl;
+		ofLogVerbose("ofxFBXSrcMesh") << getName() << " - computeSkinDeformation :: eDualQuaternion " << endl;
         computeDualQuaternionDeformation(pGlobalPosition, fbxMesh, pTime, pVertexArray, pPose, false );
         if( pNormalsArray != NULL ) {
             computeLinearDeformation( pGlobalPosition, fbxMesh, pTime, pNormalsArray, pPose, true );
         }
     } else if(lSkinningType == FbxSkin::eBlend) {
-//        cout << getName() << " - ofxFBXMesh :: computeSkinDeformation :: eBlend " << endl;
+		ofLogVerbose("ofxFBXSrcMesh") << getName() << " - computeSkinDeformation :: eBlend " << endl;
         int lVertexCount = fbxMesh->GetControlPointsCount();
         FbxVector4* lVertexArrayLinear = new FbxVector4[lVertexCount];
         memcpy(lVertexArrayLinear, fbxMesh->GetControlPoints(), lVertexCount * sizeof(FbxVector4));
@@ -1205,10 +1264,11 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
     
     if (lClusterMode == FbxCluster::eAdditive) {
         for (int i = 0; i < lVertexCount; ++i) {
-//            lClusterDeformation[i].SetIdentity();
             mlClusterDeformations[i].SetIdentity();
         }
     }
+	
+	auto globalPosMatInv = pGlobalPosition.Inverse();
     
     // For all skins and all clusters, accumulate their deformation and weight
     // on each vertices and store them in lClusterDeformation and lClusterWeight.
@@ -1229,7 +1289,7 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
             //            cout << "lClusterIndex: " << lClusterIndex << endl;
             
 //            FbxAMatrix lVertexTransformMatrix;
-            computeClusterDeformation(pGlobalPosition, pMesh, lCluster, lVertexTransformMatrix, pTime, pPose, bNormals );
+            computeClusterDeformation(pGlobalPosition, globalPosMatInv, pMesh, lCluster, lVertexTransformMatrix, pTime, pPose, bNormals );
             
 //            lVertexTransformMatrix = pGlobalPosition.Inverse() * lVertexTransformMatrix;
 //            lVertexTransformMatrix = pGlobalPosition * lVertexTransformMatrix;
@@ -1237,15 +1297,19 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
 //            lVertexTransformMatrix = lVertexTransformMatrix * pGlobalPosition.Inverse();
             
             int lVertexIndexCount = lCluster->GetControlPointIndicesCount();
+//			cout << "ofxFBXSrcMesh :: compute linear deformation : num bone weights: " << lVertexIndexCount << " | " << ofGetFrameNum() << endl;
             for (int k = 0; k < lVertexIndexCount; ++k) {
                 int lIndex = lCluster->GetControlPointIndices()[k];
                 
                 // Sometimes, the mesh can have less points than at the time of the skinning
                 // because a smooth operator was active when skinning but has been deactivated during export.
-                if (lIndex >= lVertexCount)
-                    continue;
+				if (lIndex >= lVertexCount) {
+					continue;
+				}
                 
                 double lWeight = lCluster->GetControlPointWeights()[k];
+				
+//				cout << "ofxFBXSrcMesh :: compute linear deformation : num bone weights: " << lVertexIndexCount << " | " << ofGetFrameNum() << endl;
                 
                 if (lWeight == 0.0) {
                     continue;
@@ -1278,6 +1342,7 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
             }//For each vertex
         }//lClusterCount
     }
+	
     
     //Actually deform each vertices here by information stored in lClusterDeformation and lClusterWeight
     //    cout << "going to deform the vertices now " << endl;
@@ -1301,10 +1366,10 @@ void Mesh::computeLinearDeformation(FbxAMatrix& pGlobalPosition,
                 lSrcVertex *= (1.0 - lWeight);
                 lDstVertex += lSrcVertex;
             } else if( lClusterMode == FbxCluster::eAdditive ) {
-                ofLogNotice("Mesh :: computeLinearDeformation : ") << " | " << ofGetFrameNum() << endl;
+				ofLogVerbose("ofxFBXSrcMesh") << " - computeLinearDeformation : FbxCluster::eAdditive" << " | " << ofGetFrameNum() << endl;
             }
         } else {
-            cout << i << " - Mesh::computeLinearDeformation weight is zero!! " << endl;
+			ofLogVerbose("ofxFBXSrcMesh") << i << " - Mesh::computeLinearDeformation weight is zero!! " << endl;
         }
     }
     
@@ -1331,6 +1396,8 @@ void Mesh::computeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition,
     
     double* lClusterWeight = new double[lVertexCount];
     memset(lClusterWeight, 0, lVertexCount * sizeof(double));
+	
+	auto globalPosMatInv = pGlobalPosition.Inverse();
     
     // For all skins and all clusters, accumulate their deformation and weight
     // on each vertices and store them in lClusterDeformation and lClusterWeight.
@@ -1345,7 +1412,7 @@ void Mesh::computeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition,
                 continue;
             
             FbxAMatrix lVertexTransformMatrix;
-            computeClusterDeformation(pGlobalPosition, pMesh, lCluster, lVertexTransformMatrix, pTime, pPose, bNormals );
+            computeClusterDeformation(pGlobalPosition, globalPosMatInv, pMesh, lCluster, lVertexTransformMatrix, pTime, pPose, bNormals );
             
             FbxQuaternion lQ = lVertexTransformMatrix.GetQ();
             FbxVector4 lT = lVertexTransformMatrix.GetT();
@@ -1438,11 +1505,12 @@ void Mesh::computeDualQuaternionDeformation(FbxAMatrix& pGlobalPosition,
 
 //Compute the transform matrix that the cluster will transform the vertex.
 void Mesh::computeClusterDeformation(FbxAMatrix& pGlobalPosition,
-                                           FbxMesh* pMesh,
-                                           FbxCluster* pCluster,
-                                           FbxAMatrix& pVertexTransformMatrix,
-                                           FbxTime pTime,
-                                           FbxPose* pPose, bool bNormal ) {
+									 FbxAMatrix& pGlobalPositionInv,
+									 FbxMesh* pMesh,
+                                     FbxCluster* pCluster,
+                                     FbxAMatrix& pVertexTransformMatrix,
+                                     FbxTime& pTime,
+                                     FbxPose* pPose, bool bNormal ) {
     
     FbxCluster::ELinkMode lClusterMode = pCluster->GetLinkMode();
     
@@ -1468,7 +1536,8 @@ void Mesh::computeClusterDeformation(FbxAMatrix& pGlobalPosition,
     //        cout << "We have cached cluster and bone! " << bone->getName() << endl;
 //        cout << "ofxFBXSrcMesh :: computeClusterDeformation : has associate model: " << (pCluster->GetAssociateModel() ? "YES" : "NO") << " is additive: " << (lClusterMode == FbxCluster::eAdditive ? "YES" : "NO" ) << " | " << ofGetFrameNum() << endl;
         
-        pVertexTransformMatrix = pGlobalPosition.Inverse() * bone->fbxTransform * cluster->postTrans;//lClusterInitPosition.Inverse() * lReferenceInitPosition;
+        //pVertexTransformMatrix = pGlobalPosition.Inverse() * bone->fbxTransform * cluster->postTrans;//lClusterInitPosition.Inverse() * lReferenceInitPosition;
+		pVertexTransformMatrix = pGlobalPositionInv * bone->fbxTransform * cluster->postTrans;
         if( bNormal ) {
 //            cout << "We have cached cluster andNORMAL bone! " << bone->getName() << endl;
             pVertexTransformMatrix = pVertexTransformMatrix.Inverse();
@@ -1476,7 +1545,7 @@ void Mesh::computeClusterDeformation(FbxAMatrix& pGlobalPosition,
         }
     } else {
         
-        cout << "ofxFBXSrcMesh :: computeClusterDeformationbone bone is NULL or Cluster is NULL | " << ofGetFrameNum() << endl;
+		ofLogVerbose("ofxFBXSrcMesh") << getName() << " - computeClusterDeformationbone bone is NULL or Cluster is NULL | " << ofGetFrameNum() << endl;
         
         FbxAMatrix lReferenceGlobalInitPosition;
         FbxAMatrix lReferenceGlobalCurrentPosition;
