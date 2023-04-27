@@ -2,8 +2,13 @@
 
 //--------------------------------------------------------------
 void ofApp::setup() {
+	
+	// change the units of the fbx importer
+	// the default is centimeters; // FbxSystemUnit::cm;
+	ofxFBXSource::Scene::FbxUnits = FbxSystemUnit::cm;
+	
     ofDisableArbTex();
-    
+
     ofxFBXSource::Scene::Settings settings;//ofxFBXSceneSettings settings;
     settings.filePath = "humanoid.fbx";
     settings.printInfo = true;
@@ -15,12 +20,13 @@ void ofApp::setup() {
     }
     
     cam.lookAt( ofVec3f(0,0,0) );
-    cam.setDistance( 550 );
-    cam.setFarClip(6000);
-    cam.setNearClip( .5f );
+    cam.setDistance( 50 );
+    cam.setFarClip(600);
+    cam.setNearClip( 0.15f );
     
 //    fbxMan.setup( &scene );
     fbx.setAnimation(0);
+	fbx.tiltDeg(90);
     
     bRenderNormals  = false;
     bRenderMeshes   = true;
@@ -68,7 +74,7 @@ void ofApp::draw() {
     
     
     ofSetColor( light.getDiffuseColor() );
-    light.draw();
+    //light.draw();
     
     cam.end();
     
@@ -80,7 +86,7 @@ void ofApp::draw() {
 //        numBones += skeletons[i]->getNumBones();
 //    }
     
-    ofSetColor( 60, 60, 60 );
+    ofSetColor( 160 );
     stringstream ds;
     ds << "Render normals (n): " << bRenderNormals << endl;
     ds << "Render meshes (m): " << bRenderMeshes << endl;
