@@ -46,7 +46,7 @@ you'll be asked to accept EULA during install.
 
 To switch back to release, run same script without `debug`
 
-The FBX SDK does not ship with xml2 or zlib anymore.
+The FBX SDK does not ship with xml2 or zlib anymore. They can be installed using the following commands.
 
 To install zlib: `sudo apt install zlib1g`
 
