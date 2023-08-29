@@ -46,6 +46,17 @@ you'll be asked to accept EULA during install.
 
 To switch back to release, run same script without `debug`
 
+The FBX SDK does not ship with xml2 or zlib anymore.
+
+To install zlib: `sudo apt install zlib1g`
+
+libxml2: `sudo apt-get install libxml2`
+
+The libxml2 dev files may be needed
+
+`sudo apt-get install libxml2-dev`
+
+
 ### Blender workflow. 
 Using Blender 2.63, the FBX exporter is not fully featured and there are known bugs that may be fixed in the future.
 Apply any transformations before exporting using ctrl + A. http://wiki.blender.org/index.php/User:Fade/Doc:2.6/Manual/3D_interaction/Transform_Control/Reset_Object_Transformations
