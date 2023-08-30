@@ -63,6 +63,8 @@ public:
     // NULL NODES ////////////////////////
     vector< shared_ptr<ofxFBXNode> >& getNullNodes();
     int getNumNullNodes();
+	
+	void setNodesNeedUpdate( bool ab ) {bNodesNeedLateUpdate=ab;}
     
     // MESHES ////////////////////////////
     vector< shared_ptr<ofxFBXMesh> >& getMeshes();
@@ -226,6 +228,7 @@ protected:
     
     bool bFirstRun = true;
     bool bUpdateMeshVbo = true;
+	bool bNodesNeedLateUpdate = false;
     
     // only one for now //
     AnimationTransition mAnimTrans;

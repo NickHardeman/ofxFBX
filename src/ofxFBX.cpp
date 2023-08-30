@@ -355,7 +355,7 @@ void ofxFBX::update(float aElapsedSeconds) {
 void ofxFBX::lateUpdate() {
     
     if( !areAnimationsEnabled() || !hasAnimations() ) {
-        if( bFirstRun ) {
+        if( bFirstRun || bNodesNeedLateUpdate ) {
             FbxTime ttime(FBXSDK_TIME_INFINITE);
             for( auto& node : mAllNodes ) {
                 if( node->getType() == ofxFBXSource::Node::OFX_FBX_SKELETON || node->getType() ==  ofxFBXSource::Node::OFX_FBX_BONE) {
